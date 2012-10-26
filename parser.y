@@ -105,7 +105,112 @@ equality_expression
 
 and_expression
         : equality_expression
-        | and_expression '&' and_expression
+        | and_expression '&' equality_expression
+        ;
+
+exclusive_or_expression
+        : and_expression
+        | exclusive_or_expression '^' and_expression
+        ;
+
+inclusive_or_expression
+        : exclusive_or_expression
+        | inclusive_or_expression '|' exclusive_or_expression
+        ;
+
+logical_and_expression
+        : inclusive_or_expression
+        | logical_and_expression LOGAND inclusive_or_expression
+        ;
+
+logical_or_expression
+        : logical_and_expression
+        | logical_or_expression LOGOR logical_and_expression
+        ;
+
+conditional_expression
+        : logical_or_expression
+        | logical_or_expression '?' expression ':' conditional_expression
+        ;
+
+assignment_expression
+        : conditional_expression
+        | unary_expression assignment_operator assignment_expression
+        ;
+
+assignment_operator
+        : '='
+        | TIMESEQ
+        | DIVEQ
+        | MODEQ
+        | PLUSEQ
+        | MINUSEQ
+        | SHLEQ
+        | SHREQ
+        | ANDEQ
+        | OREQ
+        | XOREQ
+        ;
+
+expression
+        : assignment_expression
+        | expression ',' assignment_expression
+        ;
+
+constant_expression
+        : conditional_expression
+        ;
+
+declaration
+        : declaration_specifiers ';'
+        | declaration_specifiers init_declarator_list ';'
+        ;
+
+declaration_specifiers
+        : storage_class_specifier
+        | storage_class_specifier declaration_specifiers
+        | type_specifier
+        | type_specifier declaration_specifiers
+        | type_qualifier
+        | type_qualifier declaration_specifiers
+        | function_specifier
+        | function_specifier declaration_specifiers
+        ;
+
+init_declarator_list
+        : init_declarator
+        | init_declarator_list ',' init_declarator
+        ;
+
+init_declarator
+        : declarator
+        | declarator '=' initializer
+        ;
+
+storage_class_specifier
+        : TYPEDEF
+        | EXTERN
+        | STATIC
+        | AUTO
+        | REGISTER
+        ;
+
+type_specifier
+        : VOID
+        | CHAR
+        | SHORT
+        | INT
+        | LONG
+        | FLOAT
+        | DOUBLE
+        | SIGNED
+        | UNSIGNED
+        | _BOOL
+        | _COMPLEX
+        | struct_or_union_specifier
+        | enum_specifier
+        | typedef_name
+        ;
 
 input:    /* empty */
         | input line
