@@ -212,6 +212,44 @@ type_specifier
         | typedef_name
         ;
 
+struct_or_union_specifier
+        : struct_or_union '{' struct_declaration_list '}'
+        | struct_or_union IDENTIFIER '{' struct_declaration_list '}'
+        | struct_or_union IDENTIFIER
+        ;
+
+struct_or_union
+        : STRUCT
+        | UNION
+        ;
+
+struct_declaration_list
+        : struct_declaration
+        | struct_declaration_list struct_declaration
+        ;
+
+struct_declaration
+        : specifier_qualifier_list struct_declarator_list ';'
+        ;
+
+specifier_qualifier_list
+        : type_specifier
+        | type_specifier specifier_qualifier_list
+        | type_qualifier
+        | type_qualifier specifier_qualifier_list
+        ;
+
+struct_declarator_list
+        : struct_declarator
+        | struct_declarator_list ',' struct_declarator
+        ;
+
+struct_declarator
+        : declarator
+        | declarator ':' constant_expression
+        | ':' constant_expression
+        ;
+
 input:    /* empty */
         | input line
 ;
