@@ -23,24 +23,46 @@ struct hashTable {
     struct hashItem *data;
 };
 
-struct hashTable * newHashTable();
+// Returns pointer to new Hash Table of at least specified size
+// returns NULL if memory allocation fails
+struct hashTable * newHashTable(int size);
 
+// Insert specified key and pointer into hash table
+// returns 0 on success
+// returns 1 if key already exists in hash table
+// returns 2 if a rehash fails
 int insert(struct hashTable *table, char *key, void *pv);
 
+// Checks if specified key is in hash table
+// returns 1 if true, 0 if false
 int contains(struct hashTable *table, char *key);
 
+// Returns pointer associated with specified key
+// If key doesnt exist, returns NULL
+// Sets int b to 1 if key exists, 0 if doesnt exist
 void * getPointer(struct hashTable *table, char *key, int *b);
 
+// Sets pointer associated with specified key
+//  returns 1 on success
+//  returns 0 if key does not exist
 int setPointer(struct hashTable *table, char *key, void *pv);
 
+// Deletes item with specified key from hash table
+// returns 1 on success
+// returns 0 if key does not exist
 int remove(struct hashTable *table, char *key);
 
-int hash(char *key);
+// hashing function
+int hash(struct hashTable *table, char *key);
 
+// returns position of hash item with specified key
+// returns -1 if hash item with specified key not found
 int findPos(struct hashTable *table, char *key);
 
+// rehashes hash table, increasing capacity by factor of 2
 int rehash(struct hashTable *table);
 
+// returns prime number at least as large as size
 static unsigned int getPrime(int size);
 
 #endif
