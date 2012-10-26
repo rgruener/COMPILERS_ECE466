@@ -15,8 +15,6 @@ int line_number;
 char filename[256];
 char string_buffer[MAX_STRING_LITERAL];
 char *string_buf_ptr;
-enum number_size n_size;
-enum number_size n_signed;
 %}
 
 %x IN_COMMENT
@@ -189,224 +187,224 @@ L?\" {string_buf_ptr=string_buffer; BEGIN(IN_STRING);} /* String Literals */
     }
 }
 [1-9][0-9]* { /* DECIMAL INTEGER CONSTANTS */
-        n_size = SIZE_INT;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_INT;
+        yylval.n_signed = SIZE_SIGNED;
         (void) sscanf(yytext, "%llu", &yylval.yyint);
         return NUMBER;
     }
 [1-9][0-9]*[uU] {
-        n_size = SIZE_INT;
-        n_signed = SIZE_UNSIGNED;
+        yylval.n_size = SIZE_INT;
+        yylval.n_signed = SIZE_UNSIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%llu", &yylval.yyint);
         return NUMBER;
     }
 [1-9][0-9]*[lL] {
-        n_size = SIZE_LONG;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONG;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%llu", &yylval.yyint);
         return NUMBER;
     }
 [1-9][0-9]*(ll|LL) {
-        n_size = SIZE_LONGLONG;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONGLONG;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-2] = '\0';
         (void) sscanf(yytext, "%llu", &yylval.yyint);
         return NUMBER;
     }
 [1-9][0-9]*([lL][uU])|([uU][lL]) {
-        n_size = SIZE_LONG;
-        n_signed = SIZE_UNSIGNED;
+        yylval.n_size = SIZE_LONG;
+        yylval.n_signed = SIZE_UNSIGNED;
         yytext[yyleng-2] = '\0';
         (void) sscanf(yytext, "%llu", &yylval.yyint);
         return NUMBER;
     }
 [1-9][0-9]*((ll|LL)[uU])|([uU](ll|LL)) {
-        n_size = SIZE_LONGLONG;
-        n_signed = SIZE_UNSIGNED;
+        yylval.n_size = SIZE_LONGLONG;
+        yylval.n_signed = SIZE_UNSIGNED;
         yytext[yyleng-3] = '\0';
         (void) sscanf(yytext, "%llu", &yylval.yyint);
         return NUMBER;
     } /* END DECIMAL INTEGER CONSTANTS */
 0[0-7]* { /* OCTAL INTEGER CONSTANTS */
-        n_size = SIZE_INT;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_INT;
+        yylval.n_signed = SIZE_SIGNED;
         (void) sscanf(yytext, "%llo", &yylval.yyint);
         return NUMBER;
     }
 0[0-7]*[uU] {
-        n_size = SIZE_INT;
-        n_signed = SIZE_UNSIGNED;
+        yylval.n_size = SIZE_INT;
+        yylval.n_signed = SIZE_UNSIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%llo", &yylval.yyint);
         return NUMBER;
     }
 0[0-7]*[lL] {
-        n_size = SIZE_LONG;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONG;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%llo", &yylval.yyint);
         return NUMBER;
     }
 0[0-7]*(ll|LL) {
-        n_size = SIZE_LONGLONG;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONGLONG;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-2] = '\0';
         (void) sscanf(yytext, "%llo", &yylval.yyint);
         return NUMBER;
     }
 0[0-7]*([lL][uU])|([uU][lL]) {
-        n_size = SIZE_LONG;
-        n_signed = SIZE_UNSIGNED;
+        yylval.n_size = SIZE_LONG;
+        yylval.n_signed = SIZE_UNSIGNED;
         yytext[yyleng-2] = '\0';
         (void) sscanf(yytext, "%llo", &yylval.yyint);
         return NUMBER;
     }
 0[0-7]*((ll|LL)[uU])|([uU](ll|LL)) {
-        n_size = SIZE_LONGLONG;
-        n_signed = SIZE_UNSIGNED;
+        yylval.n_size = SIZE_LONGLONG;
+        yylval.n_signed = SIZE_UNSIGNED;
         yytext[yyleng-3] = '\0';
         (void) sscanf(yytext, "%llo", &yylval.yyint);
         return NUMBER;
     } /* END OCTAL INTEGER CONSTANTS */
 0x[0-9a-fA-F]* { /* HEX INTEGER CONSTANTS */
-        n_size = SIZE_INT;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_INT;
+        yylval.n_signed = SIZE_SIGNED;
         (void) sscanf(yytext, "%llx", &yylval.yyint);
         return NUMBER;
     }
 0x[0-9a-fA-F]*[uU] {
-        n_size = SIZE_INT;
-        n_signed = SIZE_UNSIGNED;
+        yylval.n_size = SIZE_INT;
+        yylval.n_signed = SIZE_UNSIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%llx", &yylval.yyint);
         return NUMBER;
     }
 0x[0-9a-fA-F]*[lL] {
-        n_size = SIZE_LONG;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONG;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%llx", &yylval.yyint);
         return NUMBER;
     }
 0x[0-9a-fA-F]*(ll|LL) {
-        n_size = SIZE_LONGLONG;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONGLONG;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-2] = '\0';
         (void) sscanf(yytext, "%llx", &yylval.yyint);
         return NUMBER;
     }
 0x[0-9a-fA-F]*([lL][uU])|([uU][lL]) {
-        n_size = SIZE_LONG;
-        n_signed = SIZE_UNSIGNED;
+        yylval.n_size = SIZE_LONG;
+        yylval.n_signed = SIZE_UNSIGNED;
         yytext[yyleng-2] = '\0';
         (void) sscanf(yytext, "%llx", &yylval.yyint);
         return NUMBER;
     }
 0x[0-9a-fA-F]*((ll|LL)[uU])|([uU](ll|LL)) {
-        n_size = SIZE_LONGLONG;
-        n_signed = SIZE_UNSIGNED;
+        yylval.n_size = SIZE_LONGLONG;
+        yylval.n_signed = SIZE_UNSIGNED;
         yytext[yyleng-3] = '\0';
         (void) sscanf(yytext, "%llx", &yylval.yyint);
         return NUMBER;
     } /* END HEX INTEGER CONSTANTS */
 [0-9]*\.[0-9]* { /* DECIMAL REAL CONSTANTS */
-        n_size = SIZE_DOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_DOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 [0-9]*\.[0-9]*[fF] {
-        n_size = SIZE_FLOAT;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_FLOAT;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 [0-9]*\.[0-9]*[lL] {
-        n_size = SIZE_LONGDOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONGDOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 [0-9]*\.[0-9]*[eE][\+\-]?[0-9]+ {
-        n_size = SIZE_DOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_DOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 [0-9]*\.[0-9]*[eE][\+\-]?[0-9]+[fF] {
-        n_size = SIZE_FLOAT;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_FLOAT;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 [0-9]*\.[0-9]*[eE][\+\-]?[0-9]+[lL] {
-        n_size = SIZE_LONGDOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONGDOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 [0-9]+[eE][\+\-]?[0-9]+ {
-        n_size = SIZE_DOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_DOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 [0-9]+[eE][\+\-]?[0-9]+[fF] {
-        n_size = SIZE_FLOAT;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_FLOAT;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 [0-9]+[eE][\+\-]?[0-9]+[lL] {
-        n_size = SIZE_LONGDOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONGDOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     } /* END DECIMAL REAL CONSTANTS */
 0[xX]([0-9a-fA-F]*)?\.[0-9a-fA-F]+[pP][\+\-]?[0-9]* { /* HEX REAL CONSTANTS */
-        n_size = SIZE_DOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_DOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 0[xX]([0-9a-fA-F]*)?\.[0-9a-fA-F]+[pP][\+\-]?[0-9]*[fF] {
-        n_size = SIZE_FLOAT;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_FLOAT;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 0[xX]([0-9a-fA-F]*)?\.[0-9a-fA-F]+[pP][\+\-]?[0-9]*[lL] {
-        n_size = SIZE_LONGDOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONGDOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 0[xX][0-9a-fA-F]+[pP][\+\-]?[0-9]* {
-        n_size = SIZE_DOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_DOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 0[xX][0-9a-fA-F]+[pP][\+\-]?[0-9]*[fF] {
-        n_size = SIZE_FLOAT;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_FLOAT;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
     }
 0[xX][0-9a-fA-F]+[pP][\+\-]?[0-9]*[lL] {
-        n_size = SIZE_LONGDOUBLE;
-        n_signed = SIZE_SIGNED;
+        yylval.n_size = SIZE_LONGDOUBLE;
+        yylval.n_signed = SIZE_SIGNED;
         yytext[yyleng-1] = '\0';
         (void) sscanf(yytext, "%Lg", &yylval.yydouble);
         return NUMBER;
@@ -577,15 +575,15 @@ main(){
                     break;
                 case NUMBER:
                     printf("%s\t%d\tNUMBER", filename, line_number);
-                    if (n_size < 3){
+                    if (yylval.n_size < 3){
                         printf("\tINTEGER\t%lld\t", yylval.yyint);
                     } else {
                         printf("\tREAL\t%Lg\t", yylval.yydouble);
                     }
-                    if (n_size < 3 && n_signed == SIZE_UNSIGNED){
+                    if (yylval.n_size < 3 && yylval.n_signed == SIZE_UNSIGNED){
                         printf("UNSIGNED,");
                     }
-                    printf("%s\n", number_types[n_size]);
+                    printf("%s\n", number_types[yylval.n_size]);
                     break;
                 default:
                     printf("%s\t%d\t%s\n", filename, line_number, token_names[tok-IDENT]);  

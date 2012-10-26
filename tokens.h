@@ -89,6 +89,8 @@ typedef union {
     char * yystring;
     unsigned long long int yyint;
     long double yydouble;
+    enum number_size n_size;
+    enum number_size n_signed;
 } YYSTYPE;
 
 YYSTYPE yylval;
