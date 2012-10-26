@@ -25,7 +25,7 @@ struct hashTable {
 
 // Returns pointer to new Hash Table of at least specified size
 // returns NULL if memory allocation fails
-struct hashTable * newHashTable(int size);
+struct hashTable * hashTable_new(int size);
 
 // Insert specified key and pointer into hash table
 // returns 0 on success

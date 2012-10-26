@@ -84,7 +84,7 @@ enum number_size {
     SIZE_SIGNED
 };
 
-typedef union {
+typedef struct {
     char yychar;
     char * yystring;
     unsigned long long int yyint;
