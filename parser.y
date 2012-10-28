@@ -20,54 +20,525 @@ int yyerror(const char *p) {fprintf(stderr, "ERROR");}
 %token <str> RESTRICT RETURN SHORT SIGNED SIZEOF STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED
 %token <str> VOID VOLATILE WHILE _BOOL _COMPLEX _IMAGINARY
 
+/*%type <integer> exp*/
+
+
+%left ','
+%right '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ OREQ
+%right '?' ':'
+%left LOGOR
+%left LOGAND
+%left '|'
+%left '^'
+%left '&'
+%left EQEQ NOTEQ
+%left '<' '>' LTEQ GTEQ
+%left SHL SHR
+%left '+' '-'
+%left '*' '/' '%'
+%left INDSEL
+%left '.'
+%nonassoc IDENT NUMBER STRING CHARLIT
+
+
 %% /* Grammar rules and actions follow */
 
+
+declaration
+        : declaration_specifiers initialized_declarator_list ';'
+        ;
+
+declaration_specifiers
+        : storage_class_specifier
+        | storage_class_specifier declaration_specifiers
+        | type_specifier
+        | type_specifier declaration_specifiers
+        | type_qualifier
+        | type_qualifier declaration_specifiers
+        | function_specifier
+        | function_specifier declaration_specifiers
+        ;
+
+initialized_declarator_list
+        : initialized_declarator
+        | initizlized_declarator_list ',' initizlized_declarator
+        ;
+
+initialized_declarator
+        : declarator
+        | declarator '=' initializer
+        ;
+
+storage_class_specifier
+        : AUTO
+        | EXTERN
+        | REGISTER
+        | STATIC
+        | TYPEDEF
+        ;
+
+type_specifier
+        : enumeration_type_specifier
+        | floating_point_specifier
+        | integer_type_specifier
+        | structure_type_specifier
+        | typedef_name
+        | union_type_specifier
+        | void_type_specifier
+        ;
+
+type_qualifier
+        : CONST
+        | VOLATILE
+        | RESTRICT
+        ;
+
+declarator
+        : pointer_declarator
+        | direct_declarator
+        ;
+
+direct_declarator
+        : simple_declarator
+        | '(' declarator ')'
+        | function_declarator
+        | array_declarator
+        ;
+
+simple_declarator
+        : IDENT
+        ;
+
+pointer_declarator
+        : pointer direct_declarator
+        ;
+
+pointer
+        : '*'
+        | '*' type_qualifier_list
+        | '*' type_qualifier_list pointer
+        | '*' pointer
+        ;
+
+type_qualifier_list
+        : type_qualifier
+        | type_qualifier_list type_qualifier
+        ;
+
+array_declarator
+        : direct_declarator '[' ']'
+        | direct_declarator '[' constant_expression ']'
+        | direct_declarator '[' array_qualifier_list ']'
+        | direct_declarator '[' array_size_expression ']'
+        | direct_declarator '[' array_qualifier_list array_size_expression ']'
+        | direct_declarator '[' '*' ']'
+        | direct_declarator '[' array_qualifier_list '*' ']'
+        ;
+
+array_qualifier_list
+        : array_qualifier
+        | array_qualifier_list array_qualifier
+        ;
+
+array_qualifier
+        : STATIC
+        | RESTRICT
+        | CONST
+        | VOLATILE
+        ;
+
+array_size_expression
+        : assignment_expression
+        | '*'
+        ;
+
+initializer
+        : assignment_expression
+        | '{' initializer_list '}'
+        | '{' initializer_list ',' '}'
+        ;
+
+initializer_list
+        : initializer
+        | initializer_list ',' initializer
+        | designation initializer
+        | initializer_list ',' designation initializer
+        ;
+
+designation
+        : designator_list '='
+        ;
+
+designator_list
+        : designator
+        | designator_list designator
+        ;
+
+designator
+        : '[' constant_expression ']'
+        | '.' IDENT
+        ;
+
+integer_type_specifier
+        : signed_type_specifier
+        | unsigned_type_specifier
+        | character_type_specifier
+        | bool_type_specifier
+        ;
+
+signed_type_specifier
+        : SHORT
+        | SHORT INT
+        | SIGNED SHORT
+        | SIGNED SHORT INT
+        | INT
+        | SIGNED INT
+        | SIGNED
+        | LONG
+        | LONG INT
+        | SIGNED LONG
+        | SIGNED LONG INT
+        | LONG LONG
+        | LONG LONG INT
+        | SIGNED LONG LONG
+        | SIGNED LONG LONG INT
+        ;
+
+unsigned_type_specifier
+        : UNSIGNED SHORT
+        | UNSIGNED SHORT INT
+        | UNSIGNED
+        | UNSIGNED INT
+        | UNSIGNED LONG
+        | UNSIGNED LONG INT
+        | UNSIGNED LONG LONG
+        | UNSIGNED LONG LONG INT
+        ;
+
+character_type_specifier
+        : CHARLIT
+        | SIGNED CHARLIteger_type_specifier
+        : signed_type_specifier
+        | unsigned_type_specifier
+        | character_type_specifier
+        | bool_type_specifier
+        ;
+
+signed_type_specifier
+        : SHORT
+        | SHORT INT
+        | SIGNED SHORT
+        | SIGNED SHORT INT
+        | INT
+        | SIGNED INT
+        | SIGNED
+        | LONG
+        | LONG INT
+        | SIGNED LONG
+        | SIGNED LONG INT
+        | LONG LONG
+        | LONG LONG INT
+        | SIGNED LONG LONG
+        | SIGNED LONG LONG INT
+        ;
+
+unsigned_type_specifier
+        : UNSIGNED SHORT
+        | UNSIGNED SHORT INT
+        | UNSIGNED
+        | UNSIGNED INT
+        | UNSIGNED LONG
+        | UNSIGNED LONG INT
+        | UNSIGNED LONG LONG
+        | UNSIGNED LONG LONG INT
+        ;
+
+character_type_specifier
+        : CHARLIT
+        | SIGNED CHARLIT
+        | UNSIGNED CHARLIT
+        ;
+
+floating_point_specifier
+        : FLOAT
+        | DOUBLE
+        | LONG DOUBLE
+        | complex_type_specifier
+        ;
+
+complex_type_specifier
+        : FLOAT _COMPLEX
+        | DOUBLE _COMPLEX
+        | LONG DOUBLE _COMPLEX
+        ;
+
+bool_type_specifier
+        : _BOOL
+        ;
+
+enumeration_type_specifier
+        : enumeration_type_definition
+        | enumeration_type_reference
+        ;
+
+enumeration_type_definition
+        : ENUM '{' enumeration_definition_list '}'
+        | ENUM enumeration_tag '{' enumeration_definition_list '}'
+        | ENUM '{' enumeration_definition_list ',' '}'
+        | ENUM enumeration_tag '{' enumeration_definition_list ',' '}'
+        ;
+
+enumeration_type_reference
+        : ENUM enumeration_tag
+        ;
+
+enumeration_tag
+        : IDENT
+        ;
+
+enumeration_definition_list
+        : enumeration_constant_definition
+        | enumeration_definition_list ',' enumeration_constant_definition
+        ;
+
+enumeration_constant_definition
+        : enumeration_constant
+        | enumeration_constant '=' expression
+        ;
+
+enumeration_constant
+        : IDENT
+        ;
+
+structure_type_specifier
+        : structure_type_definition
+        | structure_type_reference
+        ;
+
+structure_type_definition
+        : STRUCT '{' field_list '}'
+        | STRUCT structure_tag '{' field_list '}'
+        ;
+
+structure_type_reference
+        : STRUCT structure_tag
+        ;
+
+structure_tag
+        : IDENT
+        ;
+
+field_list
+        : component_declaration
+        | field_list component_declaration
+        ;
+
+component_declaration
+        : type_specifier component_declaration_list ';'
+        ;
+
+component_declaration_list
+        : component_declarator
+        | component_declaration_list ',' component_declarator
+        ;
+
+component_declarator
+        : simple_component
+        | bit_field
+        ;
+
+simple_component
+        : declarator
+        ;
+
+bit_field
+        : ':' width
+        | declarator ':' width
+        ;
+
+width
+        : constant_expression
+        ;
+
+union_type_specifier
+        : union_type_definition
+        | union_type_reference
+        ;
+
+union_type_definition
+        : UNION '{' field_list '}'
+        | UNION union_tag '{' field_list '}'
+        ;
+
+union_type_reference
+        : UNION union_tag
+        ;
+
+union_tag
+        : IDENT
+        ;
+
+void_type_specifier
+        : VOID
+        ;
+
+typedef_name
+        : IDENT
+        ;
+
+type_name
+        : declaration_specifiers
+        | declaration_specifiers abstract_declarator
+        ;
+
+abstract_declarator
+        : pointer
+        | direct_abstract_declarator
+        | pointer direct_abstract_declarator
+        ;
+
+pointer
+        : '*'
+        | type_qualifier_list
+        | '*' pointer
+        | '*' type_qualifier_list pointer
+        ;
+
+type_qualifier_list
+        : type_qualifier
+        | type_qualifier_list type_qualifier
+        ;
+
+direct_abstract_declarator
+        : '(' abstract_declarator ')'
+        | '[' ']'
+        | direct_abstract_declarator '[' ']'
+        | direct_abstract_declarator '[' constant_expression ']'
+        | '[' constant_expression ']'
+        | '[' expression ']'
+        |  direct_abstract_declarator '[' expression ']'
+        | '[' '*' ']'
+        | direct_abstract_declarator '[' '*' ']'
+        | '(' ')'
+        | direct_abstract_declarator '(' ')'
+        | direct_abstract_declarator '(' parameter_type_list ')'
+        | '(' parameter_type_list ')'
+        ;
+
 primary_expression
-        : IDENTIFIER
+        : IDENT
         | NUMBER
         | STRING
-        | '(' expression ')'
+        | parenthesized_expression
+        ;
+
+parenthesized_expression
+        : '(' expression ')'
         ;
 
 postfix_expression
         : primary_expression
-        | postfix_expression '[' expression ']'
-        | postfix_expression '(' ')'
-        | postfix_expression '(' argument_expression_list ')'
-        | postfix_expression '.' IDENTIFIER
-        | postfix_expression INDSEL IDENTIFIER
-        | postfix_expression PLUSPLUS
-        | postfix_expression MINUSMINUS
-        | '(' type_name ')' '{' initializer_list '}'
-        | '(' type_name ')' '{' initializer_list ',' '}'
+        | subscript_expression
+        | component_selection_expression
+        | function_call
+        | postincrement_expression
+        | postdecrement_expression
+        | compound_literal
         ;
 
-argument_expression_list
+subscript_expression
+        : postfix_expression '[' expression ']'
+        ;
+
+component_selection_expression
+        : direct_component_selection
+        | indirect_component_selection
+        ;
+
+direct_component_selection
+        : postfix_expression '.' IDENT
+        ;
+
+indirect_component_selection
+        : postfix_expression INDSEL IDENT
+        ;
+
+function_call
+        : postfix_expression '(' ')'
+        | postfix_expression '(' expression_list ')'
+        ;
+
+expression_list
         : assignment_expression
-        | argument_expression_list ',' assignment_expression
+        | expression_list ',' assignment_expression
         ;
 
-unary_expression
-        : postfix_expression
-        | PLUSPLUS unary_expression
-        | MINUSMINUS unary_expression
-        | unary_operator cast_expression
-        | SIZEOF unary_expression
-        | SIZEOF '(' type_name ')'
+postincrement_expression
+        : postfix_expression PLUSPLUS
         ;
 
-unary_operator
-        : '&'
-        | '*'
-        | '+'
-        | '-'
-        | '~'
-        | '!'
+postdecrement_expression
+        : postfix_expression MINUSMINUS
+        ;
+
+compound_literal
+        : '(' type_name ')' '{' initializer_list '}'
+        | '(' type_name ')' '{' initializer_list ',' '}'
         ;
 
 cast_expression
         : unary_expression
         | '(' type_name ')' cast_expression
+        ;
+
+unary_expression
+        : postfix_expression
+        | sizeof_expression
+        | unary_minus_expression
+        | unary_plus_expression
+        | logical_negation_expression
+        | bitwise_negation_expression
+        | address_expression
+        | indirection_expression
+        | preincrement_expression
+        | predecrement_expression
+        ;
+
+sizeof_expression
+        : SIZEOF '(' type_name ')'
+        | SIZEOF unary_expression
+        ;
+
+unary_minus_expression
+        : '-' cast_expression
+        ;
+
+unary_plus_expression
+        : '+' cast_expression
+        ;
+
+logical_negation_expression
+        : '!' cast_expression
+        ;
+
+bitwise_negation_expression
+        : '~' cast_expression
+        ;
+
+address_expression
+        : '&' cast_expression
+        ;
+
+indirection_expression
+        : '*' cast_expression
+        ;
+
+preincrement_expression
+        : PLUSPLUS unary_expression
+        ;
+
+predecrement_expression
+        : MINUSMINUS unary_expression
         ;
 
 multiplicative_expression
@@ -93,8 +564,8 @@ relational_expression
         : shift_expression
         | relational_expression '<' shift_expression
         | relational_expression '>' shift_expression
-        | relational_expression SHLEQ shift_expression
-        | relational_expression SHREQ shift_expression
+        | relational_expression LTEQ shift_expression
+        | relational_expression GTEQ shift_expression
         ;
 
 equality_expression
@@ -133,6 +604,34 @@ conditional_expression
         | logical_or_expression '?' expression ':' conditional_expression
         ;
 
+constant_expression
+        : conditional_expression
+        ;
+
+/*constant_expression*/
+        /*: constant_expression '?' expression ':' constant_expression*/
+        /*| constant_expression LOGOR constant_expression*/
+        /*| constant_expression LOGAND constant_expression*/
+        /*| constant_expression '|' constant_expression*/
+        /*| constant_expression '^' constant_expression*/
+        /*| constant_expression '&' constant_expression*/
+        /*| constant_expression EQEQ constant_expression*/
+        /*| constant_expression NOTEQ constant_expression*/
+        /*| constant_expression '<' constant_expression*/
+        /*| constant_expression '>' constant_expression*/
+        /*| constant_expression LTEQ constant_expression*/
+        /*| constant_expression GTEQ constant_expression*/
+        /*| constant_expression SHL constant_expression*/
+        /*| constant_expression SHR constant_expression*/
+        /*| constant_expression '+' constant_expression*/
+        /*| constant_expression '-' constant_expression*/
+        /*| constant_expression '*' constant_expression*/
+        /*| constant_expression '/' constant_expression*/
+        /*| constant_expression '%' constant_expression*/
+        /*| */
+        /*;*/
+
+
 assignment_expression
         : conditional_expression
         | unary_expression assignment_operator assignment_expression
@@ -157,117 +656,198 @@ expression
         | expression ',' assignment_expression
         ;
 
-constant_expression
-        : conditional_expression
+statement
+        : expression_statement
+        | labeled_statement
+        | compound_statement
+        | conditional_statement
+        | iterative_statement
+        | switct_statement
+        | break_statement
+        | continue_statement
+        | return_statement
+        | goto_statement
+        | null_statement
         ;
 
-declaration
-        : declaration_specifiers ';'
-        | declaration_specifiers init_declarator_list ';'
+expression_statement
+        : expression ';'
         ;
 
-declaration_specifiers
-        : storage_class_specifier
-        | storage_class_specifier declaration_specifiers
-        | type_specifier
-        | type_specifier declaration_specifiers
-        | type_qualifier
-        | type_qualifier declaration_specifiers
-        | function_specifier
-        | function_specifier declaration_specifiers
+labeled_statement
+        : label ':' statement
         ;
 
-init_declarator_list
-        : init_declarator
-        | init_declarator_list ',' init_declarator
+label
+        : named_label
+        | case_label
+        | default_label
         ;
 
-init_declarator
+compound_statement
+        : '{' '}'
+        | '{' declatation_or_statement_list '}'
+        ;
+
+declatation_or_statement_list
+        : declaration_or_statement
+        | declatation_or_statement_list declaration_or_statement
+        ;
+
+declaration_or_statement
+        : declaration
+        | statement
+        ;
+
+conditional_statement
+        : if_statement
+        | if_else_statement
+        ;
+
+if_statement
+        : IF '(' expression ')' statement
+        ;
+
+if_else_statement
+        : IF '(' expression ')' ELSE statement
+        ;
+
+iterative_statement
+        : do_statement
+        | while_statement
+        | for_statement
+        ;
+
+do_statement
+        : DO statement WHILE '(' expression ')' ';'
+        ;
+
+for_statement
+        : FOR for_expressions statement
+        ;
+
+for_expressions
+        : '(' ';' ';' ')'
+        | '(' initial_clause ';' ';' ')'
+        | '(' ';' expression ';' ')'
+        | '(' ';' ';' expression ')'
+        | '(' initial_clause ';' expression ';' ')'
+        | '(' ';' expression ';' expression ')'
+        | '(' initial_clause ';' expression ';' expression ')'
+        ;
+
+initial_clause
+        : expression
+        | declaration
+        ;
+
+switct_statement
+        : SWITCH '(' expression ')' statement
+        ;
+
+case_label
+        : CASE constant_expression
+        ;
+
+default_label
+        : DEFAULT
+
+break_statement
+        : BREAK ';'
+        ;
+
+continue_statement
+        : CONTINUE ';'
+        ;
+
+return_statement
+        : RETURN ';'
+        | RETURN expression ';'
+        ;
+
+goto_statement
+        : GOTO named_label ';'
+        ;
+
+named_label
+        : IDENT
+        ;
+
+null_statement
+        : ';'
+        ;
+
+translation_unit
+        : top_level_declaration
+        | translation_unit top_level_declaration
+        ;
+
+top_level_declaration
+        : declaration
+        | function_definition
+        ;
+
+function_definition
+        : function_def_specifier compound_statement
+        ;
+
+function_def_specifier
         : declarator
-        | declarator '=' initializer
+        | declaration_specifiers declarator
+        | declarator declatarion_list
+        | declaration_specifiers declarator declaration_specifiers
         ;
 
-storage_class_specifier
-        : TYPEDEF
-        | EXTERN
-        | STATIC
-        | AUTO
-        | REGISTER
+declaration_list
+        : declaration
+        | declaration_list declaration
         ;
 
-type_specifier
-        : VOID
-        | CHAR
-        | SHORT
-        | INT
-        | LONG
-        | FLOAT
-        | DOUBLE
-        | SIGNED
-        | UNSIGNED
-        | _BOOL
-        | _COMPLEX
-        | struct_or_union_specifier
-        | enum_specifier
-        | typedef_name
+function_declarator
+        : direct_declarator '(' parameter_type_list ')'
+        | direct_declarator '(' ')'
+        | direct_declarator '(' identifier_list ')'
         ;
 
-struct_or_union_specifier
-        : struct_or_union '{' struct_declaration_list '}'
-        | struct_or_union IDENTIFIER '{' struct_declaration_list '}'
-        | struct_or_union IDENTIFIER
+parameter_type_list
+        : parameter_list
+        | parameter_list ',' ELLIPSIS
         ;
 
-struct_or_union
-        : STRUCT
-        | UNION
+parameter_list
+        : parameter_declaration
+        | parameter_list ',' parameter_declaration
         ;
 
-struct_declaration_list
-        : struct_declaration
-        | struct_declaration_list struct_declaration
+parameter_declaration
+        : declaration_specifiers declarator
+        | declaration_specifiers
+        | declaration_specifiers abstract_declarator
         ;
 
-struct_declaration
-        : specifier_qualifier_list struct_declarator_list ';'
+identifier_list
+        : IDENT
+        | identifier_list ',' IDENT
         ;
 
-specifier_qualifier_list
-        : type_specifier
-        | type_specifier specifier_qualifier_list
-        | type_qualifier
-        | type_qualifier specifier_qualifier_list
-        ;
+/*
+input: 
+     | input line
+     ;
 
-struct_declarator_list
-        : struct_declarator
-        | struct_declarator_list ',' struct_declarator
-        ;
+line: '\n'
+    | exp '\n'  {printf("end: %lld\n",$1);}
+    ;
 
-struct_declarator
-        : declarator
-        | declarator ':' constant_expression
-        | ':' constant_expression
-        ;
+exp: '(' exp ')'  {$$ = $2;}
+    |   NUMBER  {$$ = $1;}
+    | exp '+' exp { $$ = $1 + $3; printf("end: %lld\n",$$);}
+    | exp '-' exp { $$ = $1 - $3; }
+    | exp '*' exp { $$ = $1 * $3; }
+    | exp '/' exp { $$ = $1 / $3; }
+    ;
+*/
 
-input:    /* empty */
-        | input line
-;
-
-line:     '\n'
-        | exp '\n'  { printf ("\t%.10g\n", $1); }
-;
-
-exp:      NUMBER             { $$ = $1;         }
-        | exp exp '+'     { $$ = $1 + $2;    }
-        | exp exp '-'     { $$ = $1 - $2;    }
-        | exp exp '*'     { $$ = $1 * $2;    }
-        | exp exp '/'     { $$ = $1 / $2;    }
-      /* Exponentiation */
-        | exp exp '^'     { $$ = pow ($1, $2); }
-      /* Unary minus    */
-        | exp 'n'         { $$ = -$1;        }
-;
 %%
 
 int main(){
