@@ -1,9 +1,12 @@
-/* Reverse polish notation calculator. */
+/* Robert Gruener */
+/* ECE466 Compilers */
+/* parser.y */
 
 %{
 #include <math.h>
 #include <stdio.h>
 #include "tokens.h"
+#include "hash.h"
 
 extern int yylex();
 extern int yyleng;
@@ -22,6 +25,11 @@ int yyerror(const char *p) {fprintf(stderr, "ERROR");}
 
 /*%type <integer> exp*/
 
+%left INLINE
+%left SIGNED UNSIGNED
+%left LONG SHORT
+%left INT DOUBLE FLOAT CHAR
+%left CONST RESTRICT VOLATILE
 
 %left ','
 %right '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ OREQ
@@ -59,9 +67,13 @@ declaration_specifiers
         | function_specifier declaration_specifiers
         ;
 
+function_specifier
+        : INLINE
+        ;
+
 initialized_declarator_list
         : initialized_declarator
-        | initizlized_declarator_list ',' initizlized_declarator
+        | initialized_declarator_list ',' initialized_declarator
         ;
 
 initialized_declarator
@@ -191,7 +203,7 @@ signed_type_specifier
         | SHORT INT
         | SIGNED SHORT
         | SIGNED SHORT INT
-        | INT
+        | INT               
         | SIGNED INT
         | SIGNED
         | LONG
@@ -216,47 +228,9 @@ unsigned_type_specifier
         ;
 
 character_type_specifier
-        : CHARLIT
-        | SIGNED CHARLIteger_type_specifier
-        : signed_type_specifier
-        | unsigned_type_specifier
-        | character_type_specifier
-        | bool_type_specifier
-        ;
-
-signed_type_specifier
-        : SHORT
-        | SHORT INT
-        | SIGNED SHORT
-        | SIGNED SHORT INT
-        | INT
-        | SIGNED INT
-        | SIGNED
-        | LONG
-        | LONG INT
-        | SIGNED LONG
-        | SIGNED LONG INT
-        | LONG LONG
-        | LONG LONG INT
-        | SIGNED LONG LONG
-        | SIGNED LONG LONG INT
-        ;
-
-unsigned_type_specifier
-        : UNSIGNED SHORT
-        | UNSIGNED SHORT INT
-        | UNSIGNED
-        | UNSIGNED INT
-        | UNSIGNED LONG
-        | UNSIGNED LONG INT
-        | UNSIGNED LONG LONG
-        | UNSIGNED LONG LONG INT
-        ;
-
-character_type_specifier
-        : CHARLIT
-        | SIGNED CHARLIT
-        | UNSIGNED CHARLIT
+        : CHAR
+        | SIGNED CHAR
+        | UNSIGNED CHAR
         ;
 
 floating_point_specifier
@@ -662,7 +636,7 @@ statement
         | compound_statement
         | conditional_statement
         | iterative_statement
-        | switct_statement
+        | switch_statement
         | break_statement
         | continue_statement
         | return_statement
@@ -722,6 +696,10 @@ do_statement
         : DO statement WHILE '(' expression ')' ';'
         ;
 
+while_statement
+        : WHILE '(' expression ')' statement
+        ;
+
 for_statement
         : FOR for_expressions statement
         ;
@@ -741,7 +719,7 @@ initial_clause
         | declaration
         ;
 
-switct_statement
+switch_statement
         : SWITCH '(' expression ')' statement
         ;
 
@@ -794,7 +772,7 @@ function_definition
 function_def_specifier
         : declarator
         | declaration_specifiers declarator
-        | declarator declatarion_list
+        | declarator declaration_list
         | declaration_specifiers declarator declaration_specifiers
         ;
 
