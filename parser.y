@@ -5,7 +5,6 @@
 %{
 #include <math.h>
 #include <stdio.h>
-#include "tokens.h"
 #include "hash.h"
 
 extern int yylex();
@@ -31,8 +30,13 @@ int yyerror(const char *p) {fprintf(stderr, "ERROR");}
 %left INT DOUBLE FLOAT CHAR
 %left CONST RESTRICT VOLATILE
 
+%left IF
+%left ELSE
+
 %left ','
 %right '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ OREQ
+%right '['
+%left ']'
 %right '?' ':'
 %left LOGOR
 %left LOGAND
@@ -94,7 +98,7 @@ type_specifier
         | floating_point_specifier
         | integer_type_specifier
         | structure_type_specifier
-        | typedef_name
+        /*| typedef_name*/
         | union_type_specifier
         | void_type_specifier
         ;
@@ -123,13 +127,6 @@ simple_declarator
 
 pointer_declarator
         : pointer direct_declarator
-        ;
-
-pointer
-        : '*'
-        | '*' type_qualifier_list
-        | '*' type_qualifier_list pointer
-        | '*' pointer
         ;
 
 type_qualifier_list
@@ -373,14 +370,9 @@ abstract_declarator
 
 pointer
         : '*'
-        | type_qualifier_list
-        | '*' pointer
+        | '*' type_qualifier_list
         | '*' type_qualifier_list pointer
-        ;
-
-type_qualifier_list
-        : type_qualifier
-        | type_qualifier_list type_qualifier
+        | '*' pointer
         ;
 
 direct_abstract_declarator
@@ -402,6 +394,7 @@ direct_abstract_declarator
 primary_expression
         : IDENT
         | NUMBER
+        | CHARLIT
         | STRING
         | parenthesized_expression
         ;
@@ -679,7 +672,7 @@ conditional_statement
         ;
 
 if_statement
-        : IF '(' expression ')' statement
+        : IF '(' expression ')'
         ;
 
 if_else_statement
