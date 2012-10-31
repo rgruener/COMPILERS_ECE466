@@ -48,6 +48,8 @@ int yyerror(const char *p) {fprintf(stderr, "ERROR");}
 %left SHL SHR
 %left '+' '-'
 %left '*' '/' '%'
+%right '('
+%left ')'
 %left INDSEL
 %left '.'
 %nonassoc IDENT NUMBER STRING CHARLIT
@@ -508,99 +510,99 @@ predecrement_expression
         : MINUSMINUS unary_expression
         ;
 
-multiplicative_expression
-        : cast_expression
-        | multiplicative_expression '*' cast_expression
-        | multiplicative_expression '/' cast_expression
-        | multiplicative_expression '%' cast_expression
-        ;
+/*multiplicative_expression*/
+        /*: cast_expression*/
+        /*| multiplicative_expression '*' cast_expression*/
+        /*| multiplicative_expression '/' cast_expression*/
+        /*| multiplicative_expression '%' cast_expression*/
+        /*;*/
 
-additive_expression
-        : multiplicative_expression
-        | additive_expression '+' multiplicative_expression
-        | additive_expression '-' multiplicative_expression
-        ;
+/*additive_expression*/
+        /*: multiplicative_expression*/
+        /*| additive_expression '+' multiplicative_expression*/
+        /*| additive_expression '-' multiplicative_expression*/
+        /*;*/
 
-shift_expression
-        : additive_expression
-        | shift_expression SHL additive_expression
-        | shift_expression SHR additive_expression
-        ;
+/*shift_expression*/
+        /*: additive_expression*/
+        /*| shift_expression SHL additive_expression*/
+        /*| shift_expression SHR additive_expression*/
+        /*;*/
 
-relational_expression
-        : shift_expression
-        | relational_expression '<' shift_expression
-        | relational_expression '>' shift_expression
-        | relational_expression LTEQ shift_expression
-        | relational_expression GTEQ shift_expression
-        ;
+/*relational_expression*/
+        /*: shift_expression*/
+        /*| relational_expression '<' shift_expression*/
+        /*| relational_expression '>' shift_expression*/
+        /*| relational_expression LTEQ shift_expression*/
+        /*| relational_expression GTEQ shift_expression*/
+        /*;*/
 
-equality_expression
-        : relational_expression
-        | equality_expression EQEQ relational_expression
-        | equality_expression NOTEQ relational_expression
-        ;
+/*equality_expression*/
+        /*: relational_expression*/
+        /*| equality_expression EQEQ relational_expression*/
+        /*| equality_expression NOTEQ relational_expression*/
+        /*;*/
 
-and_expression
-        : equality_expression
-        | and_expression '&' equality_expression
-        ;
+/*and_expression*/
+        /*: equality_expression*/
+        /*| and_expression '&' equality_expression*/
+        /*;*/
 
-exclusive_or_expression
-        : and_expression
-        | exclusive_or_expression '^' and_expression
-        ;
+/*exclusive_or_expression*/
+        /*: and_expression*/
+        /*| exclusive_or_expression '^' and_expression*/
+        /*;*/
 
-inclusive_or_expression
-        : exclusive_or_expression
-        | inclusive_or_expression '|' exclusive_or_expression
-        ;
+/*inclusive_or_expression*/
+        /*: exclusive_or_expression*/
+        /*| inclusive_or_expression '|' exclusive_or_expression*/
+        /*;*/
 
-logical_and_expression
-        : inclusive_or_expression
-        | logical_and_expression LOGAND inclusive_or_expression
-        ;
+/*logical_and_expression*/
+        /*: inclusive_or_expression*/
+        /*| logical_and_expression LOGAND inclusive_or_expression*/
+        /*;*/
 
-logical_or_expression
-        : logical_and_expression
-        | logical_or_expression LOGOR logical_and_expression
-        ;
+/*logical_or_expression*/
+        /*: logical_and_expression*/
+        /*| logical_or_expression LOGOR logical_and_expression*/
+        /*;*/
 
-conditional_expression
-        : logical_or_expression
-        | logical_or_expression '?' expression ':' conditional_expression
-        ;
-
-constant_expression
-        : conditional_expression
-        ;
+/*conditional_expression*/
+        /*: logical_or_expression*/
+        /*| logical_or_expression '?' expression ':' conditional_expression*/
+        /*;*/
 
 /*constant_expression*/
-        /*: constant_expression '?' expression ':' constant_expression*/
-        /*| constant_expression LOGOR constant_expression*/
-        /*| constant_expression LOGAND constant_expression*/
-        /*| constant_expression '|' constant_expression*/
-        /*| constant_expression '^' constant_expression*/
-        /*| constant_expression '&' constant_expression*/
-        /*| constant_expression EQEQ constant_expression*/
-        /*| constant_expression NOTEQ constant_expression*/
-        /*| constant_expression '<' constant_expression*/
-        /*| constant_expression '>' constant_expression*/
-        /*| constant_expression LTEQ constant_expression*/
-        /*| constant_expression GTEQ constant_expression*/
-        /*| constant_expression SHL constant_expression*/
-        /*| constant_expression SHR constant_expression*/
-        /*| constant_expression '+' constant_expression*/
-        /*| constant_expression '-' constant_expression*/
-        /*| constant_expression '*' constant_expression*/
-        /*| constant_expression '/' constant_expression*/
-        /*| constant_expression '%' constant_expression*/
-        /*| */
+        /*: conditional_expression*/
         /*;*/
+
+constant_expression
+        : constant_expression '?' expression ':' constant_expression
+        | constant_expression LOGOR constant_expression
+        | constant_expression LOGAND constant_expression
+        | constant_expression '|' constant_expression
+        | constant_expression '^' constant_expression
+        | constant_expression '&' constant_expression
+        | constant_expression EQEQ constant_expression
+        | constant_expression NOTEQ constant_expression
+        | constant_expression '<' constant_expression
+        | constant_expression '>' constant_expression
+        | constant_expression LTEQ constant_expression
+        | constant_expression GTEQ constant_expression
+        | constant_expression SHL constant_expression
+        | constant_expression SHR constant_expression
+        | constant_expression '+' constant_expression
+        | constant_expression '-' constant_expression
+        | constant_expression '*' constant_expression
+        | constant_expression '/' constant_expression
+        | constant_expression '%' constant_expression
+        | cast_expression
+        ;
 
 
 assignment_expression
-        : conditional_expression
+        : constant_expression
         | unary_expression assignment_operator assignment_expression
         ;
 
