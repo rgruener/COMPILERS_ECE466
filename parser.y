@@ -28,7 +28,7 @@ int debug_parser=0;
 %token <str> RESTRICT RETURN SHORT SIGNED SIZEOF STATIC STRUCT SWITCH TYPEDEF TYPEDEF_NAME UNION UNSIGNED
 %token <str> VOID VOLATILE WHILE _BOOL _COMPLEX _IMAGINARY
 
-/*%type <integer> multiplicative_expression*/
+%type <integer> multiplicative_expression*/
 %start translation_unit
 
 /*%left INLINE*/
