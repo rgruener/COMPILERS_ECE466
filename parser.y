@@ -5,11 +5,17 @@
 %{
 #include <math.h>
 #include <stdio.h>
+#include <unistd.h>
 #include "hash.h"
+#include "tokens.h"
 
 extern int yylex();
 extern int yyleng;
-int yyerror(const char *p) {fprintf(stderr, "ERROR");}
+extern FILE *yyin;
+int yyerror(const char *p) {fprintf(stderr, "ERROR: unrecognized syntax: %s\n", p);}
+
+int debug=0;
+int debug_parser=0;
 %}
 
 %token <str> IDENT
@@ -19,40 +25,41 @@ int yyerror(const char *p) {fprintf(stderr, "ERROR");}
 %token <str> INDSEL PLUSPLUS MINUSMINUS SHL SHR LTEQ GTEQ EQEQ NOTEQ LOGAND LOGOR ELLIPSIS TIMESEQ 
 %token <str> DIVEQ MODEQ PLUSEQ MINUSEQ SHLEQ SHREQ ANDEQ OREQ XOREQ AUTO BREAK CASE CHAR CONST
 %token <str> CONTINUE DEFAULT DO DOUBLE ELSE ENUM EXTERN FLOAT FOR GOTO IF INLINE INT LONG REGISTER
-%token <str> RESTRICT RETURN SHORT SIGNED SIZEOF STATIC STRUCT SWITCH TYPEDEF UNION UNSIGNED
+%token <str> RESTRICT RETURN SHORT SIGNED SIZEOF STATIC STRUCT SWITCH TYPEDEF TYPEDEF_NAME UNION UNSIGNED
 %token <str> VOID VOLATILE WHILE _BOOL _COMPLEX _IMAGINARY
 
-/*%type <integer> exp*/
+/*%type <integer> multiplicative_expression*/
+%start translation_unit
 
-%left INLINE
-%left SIGNED UNSIGNED
-%left LONG SHORT
-%left INT DOUBLE FLOAT CHAR
-%left CONST RESTRICT VOLATILE
+/*%left INLINE*/
+/*%left SIGNED UNSIGNED*/
+/*%left LONG SHORT*/
+/*%left INT DOUBLE FLOAT CHAR*/
+/*%left CONST RESTRICT VOLATILE*/
 
-%left IF
-%left ELSE
+/*%left IF*/
+/*%left ELSE*/
 
-%left ','
-%right '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ OREQ
-%right '['
-%left ']'
-%right '?' ':'
-%left LOGOR
-%left LOGAND
-%left '|'
-%left '^'
-%left '&'
-%left EQEQ NOTEQ
-%left '<' '>' LTEQ GTEQ
-%left SHL SHR
-%left '+' '-'
-%left '*' '/' '%'
-%right '('
-%left ')'
-%left INDSEL
-%left '.'
-%nonassoc IDENT NUMBER STRING CHARLIT
+/*%left ','*/
+/*%right '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ OREQ*/
+/*%right '['*/
+/*%left ']'*/
+/*%right '?' ':'*/
+/*%left LOGOR*/
+/*%left LOGAND*/
+/*%left '|'*/
+/*%left '^'*/
+/*%left '&'*/
+/*%left EQEQ NOTEQ*/
+/*%left '<' '>' LTEQ GTEQ*/
+/*%left SHL SHR*/
+/*%left '+' '-'*/
+/*%left '*' '/' '%'*/
+/*%right '('*/
+/*%left ')'*/
+/*%left INDSEL*/
+/*%left '.'*/
+/*%nonassoc IDENT NUMBER STRING CHARLIT*/
 
 
 %% /* Grammar rules and actions follow */
@@ -100,7 +107,7 @@ type_specifier
         | floating_point_specifier
         | integer_type_specifier
         | structure_type_specifier
-        /*| typedef_name*/
+        | typedef_name
         | union_type_specifier
         | void_type_specifier
         ;
@@ -142,7 +149,7 @@ array_declarator
         | direct_declarator '[' array_qualifier_list ']'
         | direct_declarator '[' array_size_expression ']'
         | direct_declarator '[' array_qualifier_list array_size_expression ']'
-        | direct_declarator '[' '*' ']'
+        /*| direct_declarator '[' '*' ']'*/
         | direct_declarator '[' array_qualifier_list '*' ']'
         ;
 
@@ -356,7 +363,7 @@ void_type_specifier
         ;
 
 typedef_name
-        : IDENT
+        : TYPEDEF_NAME
         ;
 
 type_name
@@ -479,19 +486,19 @@ sizeof_expression
         ;
 
 unary_minus_expression
-        : '-' cast_expression
+        : '-' cast_expression { $$.yyint = -1*$2.yyint; }                   
         ;
 
 unary_plus_expression
-        : '+' cast_expression
+        : '+' cast_expression { $$.yyint = $2.yyint; }
         ;
 
 logical_negation_expression
-        : '!' cast_expression
+        : '!' cast_expression { $$.yyint = !$2.yyint; }
         ;
 
 bitwise_negation_expression
-        : '~' cast_expression
+        : '~' cast_expression { $$.yyint = ~$2.yyint; }
         ;
 
 address_expression
@@ -510,100 +517,100 @@ predecrement_expression
         : MINUSMINUS unary_expression
         ;
 
-/*multiplicative_expression*/
-        /*: cast_expression*/
-        /*| multiplicative_expression '*' cast_expression*/
-        /*| multiplicative_expression '/' cast_expression*/
-        /*| multiplicative_expression '%' cast_expression*/
-        /*;*/
+multiplicative_expression
+        : cast_expression
+        | multiplicative_expression '*' cast_expression { $$.yyint = $1.yyint * $3.yyint; }
+        | multiplicative_expression '/' cast_expression { $$.yyint = $1.yyint / $3.yyint; }
+        | multiplicative_expression '%' cast_expression { $$.yyint = $1.yyint % $3.yyint; }
+        ;
 
-/*additive_expression*/
-        /*: multiplicative_expression*/
-        /*| additive_expression '+' multiplicative_expression*/
-        /*| additive_expression '-' multiplicative_expression*/
-        /*;*/
+additive_expression
+        : multiplicative_expression
+        | additive_expression '+' multiplicative_expression
+        | additive_expression '-' multiplicative_expression
+        ;
 
-/*shift_expression*/
-        /*: additive_expression*/
-        /*| shift_expression SHL additive_expression*/
-        /*| shift_expression SHR additive_expression*/
-        /*;*/
+shift_expression
+        : additive_expression
+        | shift_expression SHL additive_expression
+        | shift_expression SHR additive_expression
+        ;
 
-/*relational_expression*/
-        /*: shift_expression*/
-        /*| relational_expression '<' shift_expression*/
-        /*| relational_expression '>' shift_expression*/
-        /*| relational_expression LTEQ shift_expression*/
-        /*| relational_expression GTEQ shift_expression*/
-        /*;*/
+relational_expression
+        : shift_expression
+        | relational_expression '<' shift_expression
+        | relational_expression '>' shift_expression
+        | relational_expression LTEQ shift_expression
+        | relational_expression GTEQ shift_expression
+        ;
 
-/*equality_expression*/
-        /*: relational_expression*/
-        /*| equality_expression EQEQ relational_expression*/
-        /*| equality_expression NOTEQ relational_expression*/
-        /*;*/
+equality_expression
+        : relational_expression
+        | equality_expression EQEQ relational_expression
+        | equality_expression NOTEQ relational_expression
+        ;
 
-/*and_expression*/
-        /*: equality_expression*/
-        /*| and_expression '&' equality_expression*/
-        /*;*/
+and_expression
+        : equality_expression
+        | and_expression '&' equality_expression
+        ;
 
-/*exclusive_or_expression*/
-        /*: and_expression*/
-        /*| exclusive_or_expression '^' and_expression*/
-        /*;*/
+exclusive_or_expression
+        : and_expression
+        | exclusive_or_expression '^' and_expression
+        ;
 
-/*inclusive_or_expression*/
-        /*: exclusive_or_expression*/
-        /*| inclusive_or_expression '|' exclusive_or_expression*/
-        /*;*/
+inclusive_or_expression
+        : exclusive_or_expression
+        | inclusive_or_expression '|' exclusive_or_expression
+        ;
 
-/*logical_and_expression*/
-        /*: inclusive_or_expression*/
-        /*| logical_and_expression LOGAND inclusive_or_expression*/
-        /*;*/
+logical_and_expression
+        : inclusive_or_expression
+        | logical_and_expression LOGAND inclusive_or_expression
+        ;
 
-/*logical_or_expression*/
-        /*: logical_and_expression*/
-        /*| logical_or_expression LOGOR logical_and_expression*/
-        /*;*/
+logical_or_expression
+        : logical_and_expression
+        | logical_or_expression LOGOR logical_and_expression
+        ;
 
-/*conditional_expression*/
-        /*: logical_or_expression*/
-        /*| logical_or_expression '?' expression ':' conditional_expression*/
-        /*;*/
-
-/*constant_expression*/
-        /*: conditional_expression*/
-        /*;*/
+conditional_expression
+        : logical_or_expression
+        | logical_or_expression '?' expression ':' conditional_expression
+        ;
 
 constant_expression
-        : constant_expression '?' expression ':' constant_expression
-        | constant_expression LOGOR constant_expression
-        | constant_expression LOGAND constant_expression
-        | constant_expression '|' constant_expression
-        | constant_expression '^' constant_expression
-        | constant_expression '&' constant_expression
-        | constant_expression EQEQ constant_expression
-        | constant_expression NOTEQ constant_expression
-        | constant_expression '<' constant_expression
-        | constant_expression '>' constant_expression
-        | constant_expression LTEQ constant_expression
-        | constant_expression GTEQ constant_expression
-        | constant_expression SHL constant_expression
-        | constant_expression SHR constant_expression
-        | constant_expression '+' constant_expression
-        | constant_expression '-' constant_expression
-        | constant_expression '*' constant_expression
-        | constant_expression '/' constant_expression
-        | constant_expression '%' constant_expression
-        | cast_expression
+        : conditional_expression
         ;
+
+/*constant_expression*/
+        /*: constant_expression '?' expression ':' constant_expression*/
+        /*| constant_expression LOGOR constant_expression*/
+        /*| constant_expression LOGAND constant_expression*/
+        /*| constant_expression '|' constant_expression*/
+        /*| constant_expression '^' constant_expression*/
+        /*| constant_expression '&' constant_expression*/
+        /*| constant_expression EQEQ constant_expression*/
+        /*| constant_expression NOTEQ constant_expression*/
+        /*| constant_expression '<' constant_expression*/
+        /*| constant_expression '>' constant_expression*/
+        /*| constant_expression LTEQ constant_expression*/
+        /*| constant_expression GTEQ constant_expression*/
+        /*| constant_expression SHL constant_expression*/
+        /*| constant_expression SHR constant_expression*/
+        /*| constant_expression '+' constant_expression*/
+        /*| constant_expression '-' constant_expression*/
+        /*| constant_expression '*' constant_expression*/
+        /*| constant_expression '/' constant_expression*/
+        /*| constant_expression '%' constant_expression*/
+        /*| cast_expression*/
+        /*;*/
 
 
 assignment_expression
         : constant_expression
-        | unary_expression assignment_operator assignment_expression
+        | unary_expression assignment_operator assignment_expression    {{ if (debug){fprintf(stderr, "assignment expression\n");} }}
         ;
 
 assignment_operator
@@ -626,17 +633,17 @@ expression
         ;
 
 statement
-        : expression_statement
-        | labeled_statement
-        | compound_statement
-        | conditional_statement
-        | iterative_statement
-        | switch_statement
-        | break_statement
-        | continue_statement
-        | return_statement
-        | goto_statement
-        | null_statement
+        : expression_statement    {{ if (debug){fprintf(stderr, "expression statement\n");} }}
+        | labeled_statement    {{ if (debug){fprintf(stderr, "labeled statement\n");} }}
+        | compound_statement    {{ if (debug){fprintf(stderr, "compound statement\n");} }}
+        | conditional_statement    {{ if (debug){fprintf(stderr, "conditional statement\n");} }}
+        | iterative_statement    {{ if (debug){fprintf(stderr, "iterative statement\n");} }}
+        | switch_statement    {{ if (debug){fprintf(stderr, "switch statement\n");} }}
+        | break_statement    {{ if (debug){fprintf(stderr, "break statement\n");} }}
+        | continue_statement    {{ if (debug){fprintf(stderr, "continue statement\n");} }}
+        | return_statement    {{ if (debug){fprintf(stderr, "return statement\n");} }}
+        | goto_statement    {{ if (debug){fprintf(stderr, "goto statement\n");} }}
+        | null_statement    {{ if (debug){fprintf(stderr, "null statement\n");} }}
         ;
 
 expression_statement
@@ -655,17 +662,17 @@ label
 
 compound_statement
         : '{' '}'
-        | '{' declatation_or_statement_list '}'
+        | '{' declaration_or_statement_list '}'
         ;
 
-declatation_or_statement_list
-        : declaration_or_statement
-        | declatation_or_statement_list declaration_or_statement
+declaration_or_statement_list
+        : declaration_or_statement    {{ if (debug){fprintf(stderr, "declaration or statement\n");} }}
+        | declaration_or_statement_list declaration_or_statement    {{ if (debug){fprintf(stderr, "declaration or statement list\n");} }}
         ;
 
 declaration_or_statement
-        : declaration
-        | statement
+        : declaration    {{ if (debug){fprintf(stderr, "declaration\n");} }}
+        | statement    {{ if (debug){fprintf(stderr, "statement\n");} }}
         ;
 
 conditional_statement
@@ -724,6 +731,7 @@ case_label
 
 default_label
         : DEFAULT
+        ;
 
 break_statement
         : BREAK ';'
@@ -751,13 +759,13 @@ null_statement
         ;
 
 translation_unit
-        : top_level_declaration
+        : top_level_declaration    {{ if (debug){fprintf(stderr, "top_level_declaration\n");} }}
         | translation_unit top_level_declaration
         ;
 
 top_level_declaration
-        : declaration
-        | function_definition
+        : declaration {{ if(debug){puts("declaration");}}}
+        | function_definition {{ if(debug){puts("function_definition");}}}
         ;
 
 function_definition
@@ -803,27 +811,30 @@ identifier_list
         | identifier_list ',' IDENT
         ;
 
-/*
-input: 
-     | input line
-     ;
-
-line: '\n'
-    | exp '\n'  {printf("end: %lld\n",$1);}
-    ;
-
-exp: '(' exp ')'  {$$ = $2;}
-    |   NUMBER  {$$ = $1;}
-    | exp '+' exp { $$ = $1 + $3; printf("end: %lld\n",$$);}
-    | exp '-' exp { $$ = $1 - $3; }
-    | exp '*' exp { $$ = $1 * $3; }
-    | exp '/' exp { $$ = $1 / $3; }
-    ;
-*/
-
 %%
 
-int main(){
+int main(int argc, char** argv){
+    char *infile;
+    int c;
+    
+    while ((c=getopt(argc, argv, "d")) != -1){
+        switch(c){
+            case 'd':
+                debug = 1;
+                break;
+            default:
+                fprintf(stderr, "invalid argument: %c\n", c);
+                break;
+        }
+
+    }
+    if (optind != argc){
+        infile = argv[optind];
+        yyin = fopen(argv[optind], "r");
+    } else {
+        infile = "stdin";
+        yyin = stdin;
+    }
     yyparse();
     return 0;
 }

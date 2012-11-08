@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tokens.h"
+#include "parser.tab.h"
 #define MAX_STRING_LITERAL 2000
 
 int line_number;
@@ -473,124 +474,124 @@ int print_chars(char *str, char *end){
     return 0;
 }
 
-main(){
-	line_number = 1;
-    strcpy(filename, "<stdin>");
-	enum tokens tok;
-    const char * number_types[] = {
-        "INT",
-        "LONG",
-        "LONGLONG",
-        "FLOAT",
-        "DOUBLE",
-        "LONGDOUBLE"
-    };
-    const char * token_names[] = {
-		"IDENT",
-		"CHARLIT",
-		"STRING",
-		"NUMBER",
-		"INDSEL",
-		"PLUSPLUS",
-		"MINUSMINUS",
-		"SHL",
-		"SHR",
-		"LTEQ",
-		"GTEQ",
-		"EQEQ",
-		"NOTEQ",
-		"LOGAND",
-		"LOGOR",
-		"ELLIPSIS",
-		"TIMESEQ",
-		"DIVEQ",
-		"MODEQ",
-		"PLUSEQ",
-		"MINUSEQ",
-		"SHLEQ",
-		"SHREQ",
-		"ANDEQ",
-		"OREQ",
-		"XOREQ",
-		"AUTO",
-		"BREAK",
-		"CASE",
-		"CHAR",
-		"CONST",
-		"CONTINUE",
-		"DEFAULT",
-		"DO",
-		"DOUBLE",
-		"ELSE",
-		"ENUM",
-		"EXTERN",
-		"FLOAT",
-		"FOR",
-		"GOTO",
-		"IF",
-		"INLINE",
-		"INT",
-		"LONG",
-		"REGISTER",
-		"RESTRICT",
-		"RETURN",
-		"SHORT",
-		"SIGNED",
-		"SIZEOF",
-		"STATIC",
-		"STRUCT",
-		"SWITCH",
-		"TYPEDEF",
-		"UNION",
-		"UNSIGNED",
-		"VOID",
-		"VOLATILE",
-		"WHILE",
-		"_BOOL",
-		"_COMPLEX",
-		"_IMAGINARY"
-    };
-	while (tok=yylex()){
-        if (tok < 257){
-            printf("%s\t%d\t%c\n", filename, line_number, tok);  
-        } 
-        else {
-            switch(tok){
-                case TOKEOF:
-                    printf("%s\t%d\tTOKEOF\n", filename, line_number);
-                    break;
-                case IDENT:
-                    printf("%s\t%d\tIDENT\t%s\n", filename, line_number, yylval.yystring);
-                    break;
-                case CHARLIT:
-                    printf("%s\t%d\tCHARLIT\t", filename, line_number);
-                    if (string_buf_ptr - string_buffer > 1){
-                        fprintf(stderr, "%s:%d:Warning:Unsupported multibyte character literal truncated to first byte\n", filename, line_number);
-                    }
-                    print_chars(string_buffer, string_buffer+1);
-                    break;
-                case STRING:
-                    printf("%s\t%d\tSTRING\t", filename, line_number);
-                    print_chars(string_buffer, string_buf_ptr);
-                    break;
-                case NUMBER:
-                    printf("%s\t%d\tNUMBER", filename, line_number);
-                    if (yylval.n_size < 3){
-                        printf("\tINTEGER\t%lld\t", yylval.yyint);
-                    } else {
-                        printf("\tREAL\t%Lg\t", yylval.yydouble);
-                    }
-                    if (yylval.n_size < 3 && yylval.n_signed == SIZE_UNSIGNED){
-                        printf("UNSIGNED,");
-                    }
-                    printf("%s\n", number_types[yylval.n_size]);
-                    break;
-                default:
-                    printf("%s\t%d\t%s\n", filename, line_number, token_names[tok-IDENT]);  
-                    break;
-            }	
-        }
-	}
-	printf("EOF\n");
-}
+/*main(){*/
+	/*line_number = 1;*/
+    /*strcpy(filename, "<stdin>");*/
+	/*enum tokens tok;*/
+    /*const char * number_types[] = {*/
+        /*"INT",*/
+        /*"LONG",*/
+        /*"LONGLONG",*/
+        /*"FLOAT",*/
+        /*"DOUBLE",*/
+        /*"LONGDOUBLE"*/
+    /*};*/
+    /*const char * token_names[] = {*/
+		/*"IDENT",*/
+		/*"CHARLIT",*/
+		/*"STRING",*/
+		/*"NUMBER",*/
+		/*"INDSEL",*/
+		/*"PLUSPLUS",*/
+		/*"MINUSMINUS",*/
+		/*"SHL",*/
+		/*"SHR",*/
+		/*"LTEQ",*/
+		/*"GTEQ",*/
+		/*"EQEQ",*/
+		/*"NOTEQ",*/
+		/*"LOGAND",*/
+		/*"LOGOR",*/
+		/*"ELLIPSIS",*/
+		/*"TIMESEQ",*/
+		/*"DIVEQ",*/
+		/*"MODEQ",*/
+		/*"PLUSEQ",*/
+		/*"MINUSEQ",*/
+		/*"SHLEQ",*/
+		/*"SHREQ",*/
+		/*"ANDEQ",*/
+		/*"OREQ",*/
+		/*"XOREQ",*/
+		/*"AUTO",*/
+		/*"BREAK",*/
+		/*"CASE",*/
+		/*"CHAR",*/
+		/*"CONST",*/
+		/*"CONTINUE",*/
+		/*"DEFAULT",*/
+		/*"DO",*/
+		/*"DOUBLE",*/
+		/*"ELSE",*/
+		/*"ENUM",*/
+		/*"EXTERN",*/
+		/*"FLOAT",*/
+		/*"FOR",*/
+		/*"GOTO",*/
+		/*"IF",*/
+		/*"INLINE",*/
+		/*"INT",*/
+		/*"LONG",*/
+		/*"REGISTER",*/
+		/*"RESTRICT",*/
+		/*"RETURN",*/
+		/*"SHORT",*/
+		/*"SIGNED",*/
+		/*"SIZEOF",*/
+		/*"STATIC",*/
+		/*"STRUCT",*/
+		/*"SWITCH",*/
+		/*"TYPEDEF",*/
+		/*"UNION",*/
+		/*"UNSIGNED",*/
+		/*"VOID",*/
+		/*"VOLATILE",*/
+		/*"WHILE",*/
+		/*"_BOOL",*/
+		/*"_COMPLEX",*/
+		/*"_IMAGINARY"*/
+    /*};*/
+	/*while (tok=yylex()){*/
+        /*if (tok < 257){*/
+            /*printf("%s\t%d\t%c\n", filename, line_number, tok);  */
+        /*} */
+        /*else {*/
+            /*switch(tok){*/
+                /*case TOKEOF:*/
+                    /*printf("%s\t%d\tTOKEOF\n", filename, line_number);*/
+                    /*break;*/
+                /*case IDENT:*/
+                    /*printf("%s\t%d\tIDENT\t%s\n", filename, line_number, yylval.yystring);*/
+                    /*break;*/
+                /*case CHARLIT:*/
+                    /*printf("%s\t%d\tCHARLIT\t", filename, line_number);*/
+                    /*if (string_buf_ptr - string_buffer > 1){*/
+                        /*fprintf(stderr, "%s:%d:Warning:Unsupported multibyte character literal truncated to first byte\n", filename, line_number);*/
+                    /*}*/
+                    /*print_chars(string_buffer, string_buffer+1);*/
+                    /*break;*/
+                /*case STRING:*/
+                    /*printf("%s\t%d\tSTRING\t", filename, line_number);*/
+                    /*print_chars(string_buffer, string_buf_ptr);*/
+                    /*break;*/
+                /*case NUMBER:*/
+                    /*printf("%s\t%d\tNUMBER", filename, line_number);*/
+                    /*if (yylval.n_size < 3){*/
+                        /*printf("\tINTEGER\t%lld\t", yylval.yyint);*/
+                    /*} else {*/
+                        /*printf("\tREAL\t%Lg\t", yylval.yydouble);*/
+                    /*}*/
+                    /*if (yylval.n_size < 3 && yylval.n_signed == SIZE_UNSIGNED){*/
+                        /*printf("UNSIGNED,");*/
+                    /*}*/
+                    /*printf("%s\n", number_types[yylval.n_size]);*/
+                    /*break;*/
+                /*default:*/
+                    /*printf("%s\t%d\t%s\n", filename, line_number, token_names[tok-IDENT]);  */
+                    /*break;*/
+            /*}	*/
+        /*}*/
+	/*}*/
+	/*printf("EOF\n");*/
+/*}*/
 
