@@ -28,7 +28,16 @@ int debug_parser=0;
 %token <str> RESTRICT RETURN SHORT SIGNED SIZEOF STATIC STRUCT SWITCH TYPEDEF TYPEDEF_NAME UNION UNSIGNED
 %token <str> VOID VOLATILE WHILE _BOOL _COMPLEX _IMAGINARY
 
-%type <integer> multiplicative_expression*/
+%type <yyint> unary_expression
+%type <yyint> cast_expression
+%type <yyint> unary_minus_expression
+%type <yyint> unary_plus_expression
+%type <yyint> logical_negation_expression
+%type <yyint> bitwise_negation_expression
+%type <yyint> multiplicative_expression
+%type <yyint> additive_expression
+
+
 %start translation_unit
 
 /*%left INLINE*/
@@ -486,19 +495,19 @@ sizeof_expression
         ;
 
 unary_minus_expression
-        : '-' cast_expression { $$.yyint = -1*$2.yyint; }                   
+        : '-' cast_expression { $$ = -1*$2; }
         ;
 
 unary_plus_expression
-        : '+' cast_expression { $$.yyint = $2.yyint; }
+        : '+' cast_expression { $$ = $2; }
         ;
 
 logical_negation_expression
-        : '!' cast_expression { $$.yyint = !$2.yyint; }
+        : '!' cast_expression { $$ = !$2; }
         ;
 
 bitwise_negation_expression
-        : '~' cast_expression { $$.yyint = ~$2.yyint; }
+        : '~' cast_expression { $$ = ~$2; }
         ;
 
 address_expression
@@ -519,15 +528,15 @@ predecrement_expression
 
 multiplicative_expression
         : cast_expression
-        | multiplicative_expression '*' cast_expression { $$.yyint = $1.yyint * $3.yyint; }
-        | multiplicative_expression '/' cast_expression { $$.yyint = $1.yyint / $3.yyint; }
-        | multiplicative_expression '%' cast_expression { $$.yyint = $1.yyint % $3.yyint; }
+        | multiplicative_expression '*' cast_expression { $$ = $1 * $3; }
+        | multiplicative_expression '/' cast_expression { $$ = $1 / $3; }
+        | multiplicative_expression '%' cast_expression { $$ = $1 % $3; }
         ;
 
 additive_expression
         : multiplicative_expression
-        | additive_expression '+' multiplicative_expression
-        | additive_expression '-' multiplicative_expression
+        | additive_expression '+' multiplicative_expression { $$ = $1 + $3; }
+        | additive_expression '-' multiplicative_expression { $$ = $1 - $3; }
         ;
 
 shift_expression

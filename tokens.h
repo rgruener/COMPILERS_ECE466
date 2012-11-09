@@ -26,6 +26,7 @@ typedef struct {
     enum number_size n_signed;
 } YYSTYPE;
 
+#define YYSTYPE YYSTYPE
 
 YYSTYPE yylval;
 

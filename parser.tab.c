@@ -77,9 +77,10 @@ extern FILE *yyin;
 int yyerror(const char *p) {fprintf(stderr, "ERROR: unrecognized syntax: %s\n", p);}
 
 int debug=0;
+int debug_parser=0;
 
 /* Line 336 of yacc.c  */
-#line 83 "parser.tab.c"
+#line 84 "parser.tab.c"
 
 # ifndef YY_NULL
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -210,7 +211,7 @@ int yyparse ();
 /* Copy the second part of user declarations.  */
 
 /* Line 353 of yacc.c  */
-#line 214 "parser.tab.c"
+#line 215 "parser.tab.c"
 
 #ifdef short
 # undef short
@@ -637,40 +638,40 @@ static const yytype_int16 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    68,    68,    72,    73,    74,    75,    76,    77,    78,
-      79,    83,    87,    88,    92,    93,    97,    98,    99,   100,
-     101,   105,   106,   107,   108,   109,   110,   111,   115,   116,
-     117,   121,   122,   126,   127,   128,   129,   133,   137,   141,
-     142,   146,   147,   148,   149,   150,   152,   156,   157,   161,
-     162,   163,   164,   168,   169,   173,   174,   175,   179,   180,
-     181,   182,   186,   190,   191,   195,   196,   200,   201,   202,
-     203,   207,   208,   209,   210,   211,   212,   213,   214,   215,
-     216,   217,   218,   219,   220,   221,   225,   226,   227,   228,
-     229,   230,   231,   232,   236,   237,   238,   242,   243,   244,
-     245,   249,   250,   251,   255,   259,   260,   264,   265,   266,
-     267,   271,   275,   279,   280,   284,   285,   289,   293,   294,
-     298,   299,   303,   307,   311,   312,   316,   320,   321,   325,
-     326,   330,   334,   335,   339,   343,   344,   348,   349,   353,
-     357,   361,   365,   369,   370,   374,   375,   376,   380,   381,
-     382,   383,   387,   388,   389,   390,   391,   392,   393,   394,
-     395,   396,   397,   398,   399,   403,   404,   405,   406,   407,
-     411,   415,   416,   417,   418,   419,   420,   421,   425,   429,
-     430,   434,   438,   442,   443,   447,   448,   452,   456,   460,
-     461,   465,   466,   470,   471,   472,   473,   474,   475,   476,
-     477,   478,   479,   483,   484,   488,   492,   496,   500,   504,
-     508,   512,   516,   520,   521,   522,   523,   527,   528,   529,
-     533,   534,   535,   539,   540,   541,   542,   543,   547,   548,
-     549,   553,   554,   558,   559,   563,   564,   568,   569,   573,
-     574,   578,   579,   583,   611,   612,   616,   617,   618,   619,
-     620,   621,   622,   623,   624,   625,   626,   630,   631,   635,
-     636,   637,   638,   639,   640,   641,   642,   643,   644,   645,
-     649,   653,   657,   658,   659,   663,   664,   668,   669,   673,
-     674,   678,   679,   683,   687,   691,   692,   693,   697,   701,
-     705,   709,   710,   711,   712,   713,   714,   715,   719,   720,
-     724,   728,   732,   736,   740,   744,   745,   749,   753,   757,
-     761,   762,   766,   767,   771,   775,   776,   777,   778,   782,
-     783,   787,   788,   789,   793,   794,   798,   799,   803,   804,
-     805,   809,   810
+       0,    78,    78,    82,    83,    84,    85,    86,    87,    88,
+      89,    93,    97,    98,   102,   103,   107,   108,   109,   110,
+     111,   115,   116,   117,   118,   119,   120,   121,   125,   126,
+     127,   131,   132,   136,   137,   138,   139,   143,   147,   151,
+     152,   156,   157,   158,   159,   160,   162,   166,   167,   171,
+     172,   173,   174,   178,   179,   183,   184,   185,   189,   190,
+     191,   192,   196,   200,   201,   205,   206,   210,   211,   212,
+     213,   217,   218,   219,   220,   221,   222,   223,   224,   225,
+     226,   227,   228,   229,   230,   231,   235,   236,   237,   238,
+     239,   240,   241,   242,   246,   247,   248,   252,   253,   254,
+     255,   259,   260,   261,   265,   269,   270,   274,   275,   276,
+     277,   281,   285,   289,   290,   294,   295,   299,   303,   304,
+     308,   309,   313,   317,   321,   322,   326,   330,   331,   335,
+     336,   340,   344,   345,   349,   353,   354,   358,   359,   363,
+     367,   371,   375,   379,   380,   384,   385,   386,   390,   391,
+     392,   393,   397,   398,   399,   400,   401,   402,   403,   404,
+     405,   406,   407,   408,   409,   413,   414,   415,   416,   417,
+     421,   425,   426,   427,   428,   429,   430,   431,   435,   439,
+     440,   444,   448,   452,   453,   457,   458,   462,   466,   470,
+     471,   475,   476,   480,   481,   482,   483,   484,   485,   486,
+     487,   488,   489,   493,   494,   498,   502,   506,   510,   514,
+     518,   522,   526,   530,   531,   532,   533,   537,   538,   539,
+     543,   544,   545,   549,   550,   551,   552,   553,   557,   558,
+     559,   563,   564,   568,   569,   573,   574,   578,   579,   583,
+     584,   588,   589,   593,   621,   622,   626,   627,   628,   629,
+     630,   631,   632,   633,   634,   635,   636,   640,   641,   645,
+     646,   647,   648,   649,   650,   651,   652,   653,   654,   655,
+     659,   663,   667,   668,   669,   673,   674,   678,   679,   683,
+     684,   688,   689,   693,   697,   701,   702,   703,   707,   711,
+     715,   719,   720,   721,   722,   723,   724,   725,   729,   730,
+     734,   738,   742,   746,   750,   754,   755,   759,   763,   767,
+     771,   772,   776,   777,   781,   785,   786,   787,   788,   792,
+     793,   797,   798,   799,   803,   804,   808,   809,   813,   814,
+     815,   819,   820
 };
 #endif
 
@@ -2247,111 +2248,177 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-        case 245:
+        case 205:
 /* Line 1787 of yacc.c  */
-#line 612 "parser.y"
+#line 498 "parser.y"
+    { (yyval.yyint) = -1*(yyvsp[(2) - (2)].yyint); }
+    break;
+
+  case 206:
+/* Line 1787 of yacc.c  */
+#line 502 "parser.y"
+    { (yyval.yyint) = (yyvsp[(2) - (2)].yyint); }
+    break;
+
+  case 207:
+/* Line 1787 of yacc.c  */
+#line 506 "parser.y"
+    { (yyval.yyint) = !(yyvsp[(2) - (2)].yyint); }
+    break;
+
+  case 208:
+/* Line 1787 of yacc.c  */
+#line 510 "parser.y"
+    { (yyval.yyint) = ~(yyvsp[(2) - (2)].yyint); }
+    break;
+
+  case 214:
+/* Line 1787 of yacc.c  */
+#line 531 "parser.y"
+    { (yyval.yyint) = (yyvsp[(1) - (3)].yyint) * (yyvsp[(3) - (3)].yyint); }
+    break;
+
+  case 215:
+/* Line 1787 of yacc.c  */
+#line 532 "parser.y"
+    { (yyval.yyint) = (yyvsp[(1) - (3)].yyint) / (yyvsp[(3) - (3)].yyint); }
+    break;
+
+  case 216:
+/* Line 1787 of yacc.c  */
+#line 533 "parser.y"
+    { (yyval.yyint) = (yyvsp[(1) - (3)].yyint) % (yyvsp[(3) - (3)].yyint); }
+    break;
+
+  case 218:
+/* Line 1787 of yacc.c  */
+#line 538 "parser.y"
+    { (yyval.yyint) = (yyvsp[(1) - (3)].yyint) + (yyvsp[(3) - (3)].yyint); }
+    break;
+
+  case 219:
+/* Line 1787 of yacc.c  */
+#line 539 "parser.y"
+    { (yyval.yyint) = (yyvsp[(1) - (3)].yyint) - (yyvsp[(3) - (3)].yyint); }
+    break;
+
+  case 245:
+/* Line 1787 of yacc.c  */
+#line 622 "parser.y"
     {{ if (debug){fprintf(stderr, "assignment expression\n");} }}
     break;
 
   case 259:
 /* Line 1787 of yacc.c  */
-#line 635 "parser.y"
+#line 645 "parser.y"
     {{ if (debug){fprintf(stderr, "expression statement\n");} }}
     break;
 
   case 260:
 /* Line 1787 of yacc.c  */
-#line 636 "parser.y"
+#line 646 "parser.y"
     {{ if (debug){fprintf(stderr, "labeled statement\n");} }}
     break;
 
   case 261:
 /* Line 1787 of yacc.c  */
-#line 637 "parser.y"
+#line 647 "parser.y"
     {{ if (debug){fprintf(stderr, "compound statement\n");} }}
     break;
 
   case 262:
 /* Line 1787 of yacc.c  */
-#line 638 "parser.y"
+#line 648 "parser.y"
     {{ if (debug){fprintf(stderr, "conditional statement\n");} }}
     break;
 
   case 263:
 /* Line 1787 of yacc.c  */
-#line 639 "parser.y"
+#line 649 "parser.y"
     {{ if (debug){fprintf(stderr, "iterative statement\n");} }}
     break;
 
   case 264:
 /* Line 1787 of yacc.c  */
-#line 640 "parser.y"
+#line 650 "parser.y"
     {{ if (debug){fprintf(stderr, "switch statement\n");} }}
     break;
 
   case 265:
 /* Line 1787 of yacc.c  */
-#line 641 "parser.y"
+#line 651 "parser.y"
     {{ if (debug){fprintf(stderr, "break statement\n");} }}
     break;
 
   case 266:
 /* Line 1787 of yacc.c  */
-#line 642 "parser.y"
+#line 652 "parser.y"
     {{ if (debug){fprintf(stderr, "continue statement\n");} }}
     break;
 
   case 267:
 /* Line 1787 of yacc.c  */
-#line 643 "parser.y"
+#line 653 "parser.y"
     {{ if (debug){fprintf(stderr, "return statement\n");} }}
     break;
 
   case 268:
 /* Line 1787 of yacc.c  */
-#line 644 "parser.y"
+#line 654 "parser.y"
     {{ if (debug){fprintf(stderr, "goto statement\n");} }}
     break;
 
   case 269:
 /* Line 1787 of yacc.c  */
-#line 645 "parser.y"
+#line 655 "parser.y"
     {{ if (debug){fprintf(stderr, "null statement\n");} }}
+    break;
+
+  case 277:
+/* Line 1787 of yacc.c  */
+#line 678 "parser.y"
+    {{ if (debug){fprintf(stderr, "declaration or statement\n");} }}
+    break;
+
+  case 278:
+/* Line 1787 of yacc.c  */
+#line 679 "parser.y"
+    {{ if (debug){fprintf(stderr, "declaration or statement list\n");} }}
     break;
 
   case 279:
 /* Line 1787 of yacc.c  */
-#line 673 "parser.y"
+#line 683 "parser.y"
     {{ if (debug){fprintf(stderr, "declaration\n");} }}
     break;
 
   case 280:
 /* Line 1787 of yacc.c  */
-#line 674 "parser.y"
+#line 684 "parser.y"
     {{ if (debug){fprintf(stderr, "statement\n");} }}
     break;
 
   case 310:
 /* Line 1787 of yacc.c  */
-#line 761 "parser.y"
+#line 771 "parser.y"
     {{ if (debug){fprintf(stderr, "top_level_declaration\n");} }}
     break;
 
   case 312:
 /* Line 1787 of yacc.c  */
-#line 766 "parser.y"
+#line 776 "parser.y"
     {{ if(debug){puts("declaration");}}}
     break;
 
   case 313:
 /* Line 1787 of yacc.c  */
-#line 767 "parser.y"
+#line 777 "parser.y"
     {{ if(debug){puts("function_definition");}}}
     break;
 
 
 /* Line 1787 of yacc.c  */
-#line 2355 "parser.tab.c"
+#line 2422 "parser.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2581,7 +2648,7 @@ yyreturn:
 
 
 /* Line 2048 of yacc.c  */
-#line 813 "parser.y"
+#line 823 "parser.y"
 
 
 int main(int argc, char** argv){
