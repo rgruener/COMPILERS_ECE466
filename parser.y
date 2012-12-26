@@ -8,14 +8,20 @@
 #include <unistd.h>
 #include "hash.h"
 #include "tokens.h"
+#include "symbol_table.h"
+#include "ast.h"
 
 extern int yylex();
 extern int yyleng;
+extern int line_number;
+extern char filename[256];
 extern FILE *yyin;
 int yyerror(const char *p) {fprintf(stderr, "ERROR: unrecognized syntax: %s\n", p);}
 
 int debug=0;
-int debug_parser=0;
+int print_ast=0;
+
+struct sym_table *current_scope;
 %}
 
 %token <str> IDENT
@@ -28,54 +34,25 @@ int debug_parser=0;
 %token <str> RESTRICT RETURN SHORT SIGNED SIZEOF STATIC STRUCT SWITCH TYPEDEF TYPEDEF_NAME UNION UNSIGNED
 %token <str> VOID VOLATILE WHILE _BOOL _COMPLEX _IMAGINARY
 
-%type <yyint> unary_expression
-%type <yyint> cast_expression
-%type <yyint> unary_minus_expression
-%type <yyint> unary_plus_expression
-%type <yyint> logical_negation_expression
-%type <yyint> bitwise_negation_expression
-%type <yyint> multiplicative_expression
-%type <yyint> additive_expression
-
+%type<node> declaration declaration_specifiers initialized_declarator_list simple_declarator integer_type_specifier
+%type<node> pointer_declarator pointer direct_declarator primary_expression array_declarator
+%type<node> logical_or_expression logical_and_expression logical_negation_expression multiplicative_expression additive_expression
+%type<node> bitwise_negation_expression inclusive_or_expression exclusive_or_expression and_expression equality_expression relational_expression
+%type<node> shift_expression indirection_expression unary_plus_expression unary_minus_expression postdecrement_expression postincrement_expression
+%type<node> preincrement_expression predecrement_expression address_expression constant_expression cast_expression function_declarator
+%type<node> character_type_specifier storage_class_specifier type_specifier type_qualifier function_specifier declarator
+%type<node> expression parenthesized_expression enumeration_type_specifier floating_point_specifier type_name union_type_specifier void_type_specifier
+%type<node> initialized_declarator structure_type_specifier typedef_name bool_type_specifier
 
 %start translation_unit
-
-/*%left INLINE*/
-/*%left SIGNED UNSIGNED*/
-/*%left LONG SHORT*/
-/*%left INT DOUBLE FLOAT CHAR*/
-/*%left CONST RESTRICT VOLATILE*/
-
-/*%left IF*/
-/*%left ELSE*/
-
-/*%left ','*/
-/*%right '=' PLUSEQ MINUSEQ TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ XOREQ OREQ*/
-/*%right '['*/
-/*%left ']'*/
-/*%right '?' ':'*/
-/*%left LOGOR*/
-/*%left LOGAND*/
-/*%left '|'*/
-/*%left '^'*/
-/*%left '&'*/
-/*%left EQEQ NOTEQ*/
-/*%left '<' '>' LTEQ GTEQ*/
-/*%left SHL SHR*/
-/*%left '+' '-'*/
-/*%left '*' '/' '%'*/
-/*%right '('*/
-/*%left ')'*/
-/*%left INDSEL*/
-/*%left '.'*/
-/*%nonassoc IDENT NUMBER STRING CHARLIT*/
-
 
 %% /* Grammar rules and actions follow */
 
 
 declaration
-        : declaration_specifiers initialized_declarator_list ';'
+        : declaration_specifiers initialized_declarator_list ';' {  $1->next = $2;
+                                                                    $$ = ast_reverse_tree($1);
+                                                                    if (print_ast){ast_print_tree($$);} }
         ;
 
 declaration_specifiers
@@ -99,7 +76,7 @@ initialized_declarator_list
         ;
 
 initialized_declarator
-        : declarator
+        : declarator {if(debug)printf("declarator\n");}
         | declarator '=' initializer
         ;
 
@@ -128,23 +105,26 @@ type_qualifier
         ;
 
 declarator
-        : pointer_declarator
-        | direct_declarator
+        : pointer_declarator {if(debug)printf("pointer_declarator\n");}
+        | direct_declarator {if(debug)printf("direct_declarator\n");}
         ;
 
 direct_declarator
-        : simple_declarator
-        | '(' declarator ')'
-        | function_declarator
-        | array_declarator
+        : simple_declarator {if(debug)printf("simple_declarator\n");}
+        | '(' declarator ')' {if(debug)printf("parenthasized_declarator\n"); $$ = $2;} 
+        | function_declarator {if(debug)printf("function_declarator\n");}
+        | array_declarator {if(debug)printf("array_declarator\n");}
         ;
 
 simple_declarator
-        : IDENT
+        : IDENT {   $$ = ast_newnode(AST_VAR);
+                    strcpy($$->attributes.identifier, yylval.yystring);
+                    $$->attributes.ln_effective = line_number;
+                    insert_ident(current_scope, yylval.yystring, $$, NAMESPACE_OTHER);}
         ;
 
 pointer_declarator
-        : pointer direct_declarator
+        : pointer direct_declarator {   $$ = ast_push_back($1,$2);ast_print_tree($1); } 
         ;
 
 type_qualifier_list
@@ -153,13 +133,26 @@ type_qualifier_list
         ;
 
 array_declarator
-        : direct_declarator '[' ']'
-        | direct_declarator '[' constant_expression ']'
-        | direct_declarator '[' array_qualifier_list ']'
-        | direct_declarator '[' array_size_expression ']'
-        | direct_declarator '[' array_qualifier_list array_size_expression ']'
-        /*| direct_declarator '[' '*' ']'*/
-        | direct_declarator '[' array_qualifier_list '*' ']'
+        : direct_declarator '[' ']'    {   $$ = ast_newnode(AST_ARRAY);
+                                                $$->next = $1;
+                                                $$->attributes.size = -1;  } 
+        | direct_declarator '[' constant_expression ']'     {   if ($3->type != AST_NUM){
+                                                                    ast_print_syntax_error(filename, line_number);
+                                                                } else {
+                                                                    $$ = ast_newnode(AST_ARRAY);
+                                                                    $$->next = $1;
+                                                                    $$->attributes.size = $3->attributes.num; } }
+        | direct_declarator '[' array_qualifier_list ']'     /*{   $$ = ast_newnode(AST_ARRAY);
+                                                                    $$->prev = $1;  }*/
+        | direct_declarator '[' array_size_expression ']'     /*{   $$ = ast_newnode(AST_ARRAY);
+                                                                    $$->prev = $1;
+                                                                    $$->attributes.size = $3;  }*/
+        | direct_declarator '[' array_qualifier_list array_size_expression ']'  /*{   $$ = ast_newnode(AST_ARRAY);
+                                                                                        $$->prev = $1;
+                                                                                        $$->attributes.size = $4;  }*/
+        | direct_declarator '[' array_qualifier_list '*' ']'    /*{   $$ = ast_newnode(AST_ARRAY);
+                                                                        $$->prev = $1;
+                                                                        $$->attributes.size = -1;  }*/
         ;
 
 array_qualifier_list
@@ -207,10 +200,16 @@ designator
         ;
 
 integer_type_specifier
-        : signed_type_specifier
-        | unsigned_type_specifier
+        : signed_type_specifier { $$ = ast_newnode(AST_SCALAR); 
+                                    $$->attributes.num_signed = SIZE_SIGNED;
+                                    $$->attributes.scalar_type = SCALAR_INT; }
+        | unsigned_type_specifier { $$ = ast_newnode(AST_SCALAR); 
+                                        $$->attributes.num_signed = SIZE_UNSIGNED;
+                                        $$->attributes.scalar_type = SCALAR_INT; }
         | character_type_specifier
-        | bool_type_specifier
+        | bool_type_specifier { $$ = ast_newnode(AST_SCALAR); 
+                                        $$->attributes.num_signed = SIZE_SIGNED;
+                                        $$->attributes.scalar_type = SCALAR_INT; }
         ;
 
 signed_type_specifier
@@ -243,9 +242,15 @@ unsigned_type_specifier
         ;
 
 character_type_specifier
-        : CHAR
-        | SIGNED CHAR
-        | UNSIGNED CHAR
+        : CHAR { $$ = ast_newnode(AST_SCALAR); 
+                                        $$->attributes.num_signed = SIZE_SIGNED;
+                                        $$->attributes.scalar_type = SCALAR_CHAR; }
+        | SIGNED CHAR { $$ = ast_newnode(AST_SCALAR); 
+                                        $$->attributes.num_signed = SIZE_SIGNED;
+                                        $$->attributes.scalar_type = SCALAR_CHAR; }
+        | UNSIGNED CHAR { $$ = ast_newnode(AST_SCALAR); 
+                                        $$->attributes.num_signed = SIZE_UNSIGNED;
+                                        $$->attributes.scalar_type = SCALAR_CHAR; }
         ;
 
 floating_point_specifier
@@ -387,10 +392,10 @@ abstract_declarator
         ;
 
 pointer
-        : '*'
-        | '*' type_qualifier_list
-        | '*' type_qualifier_list pointer
-        | '*' pointer
+        : '*' { $$ = ast_newnode(AST_PTR); }
+        | '*' type_qualifier_list { $$ = ast_newnode(AST_PTR); }
+        | '*' type_qualifier_list pointer { $$ = ast_newnode(AST_PTR); $$->next = $3; }
+        | '*' pointer { $$ = ast_newnode(AST_PTR); $$->next = $2; }
         ;
 
 direct_abstract_declarator
@@ -411,14 +416,14 @@ direct_abstract_declarator
 
 primary_expression
         : IDENT
-        | NUMBER
-        | CHARLIT
-        | STRING
+        | NUMBER { $$ = ast_newnode(AST_NUM); $$->attributes.num = yylval.yyint; }
+        | CHARLIT { $$ = ast_newnode(AST_CHAR); $$->attributes.num = (int)(yylval.yychar); }
+        | STRING { $$ = ast_newnode(AST_STR); strcpy($$->attributes.str, yylval.yystring); }
         | parenthesized_expression
         ;
 
 parenthesized_expression
-        : '(' expression ')'
+        : '(' expression ')' { $$ = $2; }
         ;
 
 postfix_expression
@@ -459,11 +464,11 @@ expression_list
         ;
 
 postincrement_expression
-        : postfix_expression PLUSPLUS
+        : postfix_expression PLUSPLUS { $$ = ast_newnode(AST_UNOP); $$->attributes.op = PLUSPLUS; }
         ;
 
 postdecrement_expression
-        : postfix_expression MINUSMINUS
+        : postfix_expression MINUSMINUS { $$ = ast_newnode(AST_UNOP); $$->attributes.op = MINUSMINUS; }
         ;
 
 compound_literal
@@ -495,27 +500,27 @@ sizeof_expression
         ;
 
 unary_minus_expression
-        : '-' cast_expression { $$ = -1*$2; }
+        : '-' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '-'; }
         ;
 
 unary_plus_expression
-        : '+' cast_expression { $$ = $2; }
+        : '+' cast_expression  { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '+'; }
         ;
 
 logical_negation_expression
-        : '!' cast_expression { $$ = !$2; }
+        : '!' cast_expression  { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '!'; }
         ;
 
 bitwise_negation_expression
-        : '~' cast_expression { $$ = ~$2; }
+        : '~' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '~'; } 
         ;
 
 address_expression
-        : '&' cast_expression
+        : '&' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '&'; }
         ;
 
 indirection_expression
-        : '*' cast_expression
+        : '*' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '*'; }
         ;
 
 preincrement_expression
@@ -528,65 +533,101 @@ predecrement_expression
 
 multiplicative_expression
         : cast_expression
-        | multiplicative_expression '*' cast_expression { $$ = $1 * $3; }
-        | multiplicative_expression '/' cast_expression { $$ = $1 / $3; }
-        | multiplicative_expression '%' cast_expression { $$ = $1 % $3; }
+        | multiplicative_expression '*' cast_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '*'; 
+                                                            $$->left=$1; $$->right=$3; }
+        | multiplicative_expression '/' cast_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '/'; 
+                                                            $$->left=$1; $$->right=$3; } 
+        | multiplicative_expression '%' cast_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '%'; 
+                                                            $$->left=$1; $$->right=$3; } 
         ;
 
 additive_expression
         : multiplicative_expression
-        | additive_expression '+' multiplicative_expression { $$ = $1 + $3; }
-        | additive_expression '-' multiplicative_expression { $$ = $1 - $3; }
+        | additive_expression '+' multiplicative_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '+'; 
+                                                            $$->left=$1; $$->right=$3; } 
+        | additive_expression '-' multiplicative_expression  { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '-'; 
+                                                            $$->left=$1; $$->right=$3; }
         ;
 
 shift_expression
         : additive_expression
-        | shift_expression SHL additive_expression
-        | shift_expression SHR additive_expression
+        | shift_expression SHL additive_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = SHL; 
+                                                            $$->left=$1; $$->right=$3; }
+        | shift_expression SHR additive_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = SHR; 
+                                                            $$->left=$1; $$->right=$3; }
         ;
 
 relational_expression
         : shift_expression
-        | relational_expression '<' shift_expression
-        | relational_expression '>' shift_expression
-        | relational_expression LTEQ shift_expression
-        | relational_expression GTEQ shift_expression
+        | relational_expression '<' shift_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '<'; 
+                                                            $$->left=$1; $$->right=$3; }
+        | relational_expression '>' shift_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '>'; 
+                                                            $$->left=$1; $$->right=$3; }
+        | relational_expression LTEQ shift_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = LTEQ; 
+                                                            $$->left=$1; $$->right=$3; }
+        | relational_expression GTEQ shift_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = GTEQ; 
+                                                            $$->left=$1; $$->right=$3; }
         ;
 
 equality_expression
         : relational_expression
-        | equality_expression EQEQ relational_expression
-        | equality_expression NOTEQ relational_expression
+        | equality_expression EQEQ relational_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = EQEQ; 
+                                                            $$->left=$1; $$->right=$3; }
+        | equality_expression NOTEQ relational_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = NOTEQ; 
+                                                            $$->left=$1; $$->right=$3; }
         ;
 
 and_expression
         : equality_expression
-        | and_expression '&' equality_expression
+        | and_expression '&' equality_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '&'; 
+                                                            $$->left=$1; $$->right=$3; }
         ;
 
 exclusive_or_expression
         : and_expression
-        | exclusive_or_expression '^' and_expression
+        | exclusive_or_expression '^' and_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '^'; 
+                                                            $$->left=$1; $$->right=$3; }
         ;
 
 inclusive_or_expression
         : exclusive_or_expression
-        | inclusive_or_expression '|' exclusive_or_expression
+        | inclusive_or_expression '|' exclusive_or_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = '|'; 
+                                                            $$->left=$1; $$->right=$3; }
         ;
 
 logical_and_expression
         : inclusive_or_expression
-        | logical_and_expression LOGAND inclusive_or_expression
+        | logical_and_expression LOGAND inclusive_or_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = LOGAND; 
+                                                            $$->left=$1; $$->right=$3; }
         ;
 
 logical_or_expression
         : logical_and_expression
-        | logical_or_expression LOGOR logical_and_expression
+        | logical_or_expression LOGOR logical_and_expression { $$ = ast_newnode(AST_BINOP); 
+                                                            $$->attributes.op = LOGOR; 
+                                                            $$->left=$1; $$->right=$3; }
         ;
 
 conditional_expression
         : logical_or_expression
-        | logical_or_expression '?' expression ':' conditional_expression
+        | logical_or_expression '?' expression ':' conditional_expression { ast_print_syntax_error(filename, line_number); }
         ;
 
 constant_expression
@@ -644,7 +685,9 @@ expression
 statement
         : expression_statement    {{ if (debug){fprintf(stderr, "expression statement\n");} }}
         | labeled_statement    {{ if (debug){fprintf(stderr, "labeled statement\n");} }}
-        | compound_statement    {{ if (debug){fprintf(stderr, "compound statement\n");} }}
+        | compound_statement    {   struct sym_table *new_scope = sym_table_new(filename, BLOCK_SCOPE, line_number, current_scope); 
+                                        current_scope = new_scope;
+                                        if (debug){fprintf(stderr, "compound statement\n");}}
         | conditional_statement    {{ if (debug){fprintf(stderr, "conditional statement\n");} }}
         | iterative_statement    {{ if (debug){fprintf(stderr, "iterative statement\n");} }}
         | switch_statement    {{ if (debug){fprintf(stderr, "switch statement\n");} }}
@@ -671,12 +714,13 @@ label
 
 compound_statement
         : '{' '}'
-        | '{' declaration_or_statement_list '}'
+        | '{' { current_scope = sym_table_new(filename, BLOCK_SCOPE, line_number, current_scope); } 
+            declaration_or_statement_list '}' { current_scope = sym_table_pop(current_scope); }
         ;
 
 declaration_or_statement_list
-        : declaration_or_statement    {{ if (debug){fprintf(stderr, "declaration or statement\n");} }}
-        | declaration_or_statement_list declaration_or_statement    {{ if (debug){fprintf(stderr, "declaration or statement list\n");} }}
+        : declaration_or_statement
+        | declaration_or_statement_list declaration_or_statement
         ;
 
 declaration_or_statement
@@ -745,7 +789,7 @@ default_label
 break_statement
         : BREAK ';'
         ;
-
+    
 continue_statement
         : CONTINUE ';'
         ;
@@ -760,7 +804,7 @@ goto_statement
         ;
 
 named_label
-        : IDENT
+        : IDENT {insert_ident(current_scope, yylval.yystring, NULL, NAMESPACE_LABELS);}
         ;
 
 null_statement
@@ -778,7 +822,8 @@ top_level_declaration
         ;
 
 function_definition
-        : function_def_specifier compound_statement
+        : function_def_specifier '{' { current_scope = sym_table_new(filename, FUNCTION_SCOPE, line_number, current_scope); } 
+            declaration_or_statement_list '}' { current_scope = sym_table_pop(current_scope); }
         ;
 
 function_def_specifier
@@ -794,9 +839,11 @@ declaration_list
         ;
 
 function_declarator
-        : direct_declarator '(' parameter_type_list ')'
-        | direct_declarator '(' ')'
-        | direct_declarator '(' identifier_list ')'
+        : direct_declarator '(' parameter_type_list ')' { fprintf(stderr, "Warning: This compiler doesn't support function prototypes - %s: %d\n",
+                                                                 filename, line_number); }
+        | direct_declarator '(' ')' { ast_print_tree($1); $$ = ast_newnode(AST_FN); ast_push_back($$,$1); }
+        | direct_declarator '(' identifier_list ')' { fprintf(stderr, "Warning: This compiler doesn't support function arguments - %s: %d\n",
+                                                                filename, line_number); }
         ;
 
 parameter_type_list
@@ -826,10 +873,13 @@ int main(int argc, char** argv){
     char *infile;
     int c;
     
-    while ((c=getopt(argc, argv, "d")) != -1){
+    while ((c=getopt(argc, argv, "da")) != -1){
         switch(c){
             case 'd':
                 debug = 1;
+                break;
+            case 'a':
+                print_ast = 1;
                 break;
             default:
                 fprintf(stderr, "invalid argument: %c\n", c);
@@ -841,9 +891,12 @@ int main(int argc, char** argv){
         infile = argv[optind];
         yyin = fopen(argv[optind], "r");
     } else {
+        strcpy(filename, "stdin");
+        line_number=1;
         infile = "stdin";
         yyin = stdin;
     }
+    current_scope = sym_table_new(infile, FILE_SCOPE, 1, NULL);
     yyparse();
     return 0;
 }

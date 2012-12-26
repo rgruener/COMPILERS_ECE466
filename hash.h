@@ -59,6 +59,8 @@ int hash(struct hashTable *table, char *key);
 // returns -1 if hash item with specified key not found
 int hashTable_findPos(struct hashTable *table, char *key);
 
+int hashTable_print(struct hashTable *table);
+
 // rehashes hash table, increasing capacity by factor of 2
 int hashTable_rehash(struct hashTable *table);
 

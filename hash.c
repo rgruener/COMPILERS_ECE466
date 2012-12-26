@@ -146,6 +146,16 @@ int hashTable_rehash(struct hashTable *table){
     return 1;
 }
 
+int hashTable_print(struct hashTable *table){
+    int i;
+    for (i=0; i<table->capacity; i++){
+        if (table->data[i].isOccupied && !table->data[i].isDeleted){
+            printf("%s\n", table->data[i].key);
+        }
+    }
+    return 1;
+}
+
 static unsigned int getPrime(int size){
     const int primes[] = {24593, 49157, 98317, 196613, 393241, 786433, 1572869, 3145739, 6291469, 1252829, 25165843};
     int i;

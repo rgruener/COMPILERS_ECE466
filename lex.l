@@ -10,7 +10,6 @@
 #include <string.h>
 #include "tokens.h"
 #include "parser.tab.h"
-#define MAX_STRING_LITERAL 2000
 
 int line_number;
 char filename[256];

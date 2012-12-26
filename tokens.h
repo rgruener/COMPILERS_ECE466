@@ -6,6 +6,8 @@
 #ifndef _TOKENS_H 
 #define _TOKENS_H
 
+#include "ast.h"
+
 enum number_size {
     SIZE_INT=0,
     SIZE_LONG,
@@ -24,6 +26,7 @@ typedef struct {
     long double yydouble;
     enum number_size n_size;
     enum number_size n_signed;
+    struct ast_node *node;
 } YYSTYPE;
 
 #define YYSTYPE YYSTYPE
