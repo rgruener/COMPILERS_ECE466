@@ -24,17 +24,18 @@ int print_ast=0;
 struct sym_table *current_scope;
 %}
 
-%token <str> IDENT
-%token <character> CHARLIT
-%token <str> STRING
-%token<integer> NUMBER
-%token <str> INDSEL PLUSPLUS MINUSMINUS SHL SHR LTEQ GTEQ EQEQ NOTEQ LOGAND LOGOR ELLIPSIS TIMESEQ 
-%token <str> DIVEQ MODEQ PLUSEQ MINUSEQ SHLEQ SHREQ ANDEQ OREQ XOREQ AUTO BREAK CASE CHAR CONST
+%token <yystring> IDENT
+%token <yychar> CHARLIT
+%token <yystring> STRING
+%token <yyint> NUMBER TIMESEQ DIVEQ MODEQ SHLEQ SHREQ ANDEQ OREQ XOREQ PLUSEQ MINUSEQ
+%token <yyint> INDSEL PLUSPLUS MINUSMINUS SHL SHR LTEQ GTEQ EQEQ NOTEQ LOGAND LOGOR
+%token <yyint> PREINC POSTINC PREDEC POSTDEC
+%token <str> AUTO BREAK CASE CHAR CONST ELLIPSIS
 %token <str> CONTINUE DEFAULT DO DOUBLE ELSE ENUM EXTERN FLOAT FOR GOTO IF INLINE INT LONG REGISTER
 %token <str> RESTRICT RETURN SHORT SIGNED SIZEOF STATIC STRUCT SWITCH TYPEDEF TYPEDEF_NAME UNION UNSIGNED
 %token <str> VOID VOLATILE WHILE _BOOL _COMPLEX _IMAGINARY
 
-%type<node> declaration declaration_specifiers initialized_declarator_list simple_declarator integer_type_specifier
+%type<node> declaration declaration_specifiers simple_declarator integer_type_specifier
 %type<node> pointer_declarator pointer direct_declarator primary_expression array_declarator
 %type<node> logical_or_expression logical_and_expression logical_negation_expression multiplicative_expression additive_expression
 %type<node> bitwise_negation_expression inclusive_or_expression exclusive_or_expression and_expression equality_expression relational_expression
@@ -42,7 +43,12 @@ struct sym_table *current_scope;
 %type<node> preincrement_expression predecrement_expression address_expression constant_expression cast_expression function_declarator
 %type<node> character_type_specifier storage_class_specifier type_specifier type_qualifier function_specifier declarator
 %type<node> expression parenthesized_expression enumeration_type_specifier floating_point_specifier type_name union_type_specifier void_type_specifier
-%type<node> initialized_declarator structure_type_specifier typedef_name bool_type_specifier
+%type<node> initialized_declarator structure_type_specifier typedef_name bool_type_specifier typedef_definition
+%type<node> expression_statement null_statement unary_expression assignment_expression statement postfix_expression subscript_expression
+%type<node> initialized_declarator_list function_call sizeof_expression component_selection_expression compound_literal
+%type<node> if_statement if_else_statement for_expressions for_statement while_statement do_statement switch_statement initial_clause
+%type<node> conditional_expression declaration_or_statement_list declaration_or_statement function_definition function_def_specifier
+%type<yyint> assignment_operator
 
 %start translation_unit
 
@@ -50,29 +56,53 @@ struct sym_table *current_scope;
 
 
 declaration
-        : declaration_specifiers initialized_declarator_list ';' {  $1->next = $2;
-                                                                    $$ = ast_reverse_tree($1);
-                                                                    if (print_ast){ast_print_tree($$);} }
+        : declaration_specifiers initialized_declarator_list ';' 
+            {
+                int i;
+                struct ast_node *head = $2;
+                while ($2 != NULL){
+                        
+                    struct ast_node *var_type = $1;
+                    while (var_type->type == AST_STORAGE){
+                        var_type = var_type->left;
+                    }
+                    ast_push_back(var_type, $2,LEFT);
+                    $$ = ast_reverse_tree(var_type, LEFT);
+                    if ($1->type == AST_STORAGE){
+                        struct ast_node *tmp = $$->left;
+                        struct ast_node *this = $1;
+                        while (this->left->type == AST_STORAGE){
+                            this = this->left;
+                        }
+                        this->left = tmp;
+                        $$->left = $1;
+                    }
+                    $2 = $2->next;
+                }
+                $$ = head;
+            }
         ;
 
 declaration_specifiers
         : storage_class_specifier
-        | storage_class_specifier declaration_specifiers
+        | storage_class_specifier declaration_specifiers { $$ = ast_push_back($1, $2, LEFT); }
+        | typedef_definition
+        | typedef_definition declaration_specifiers { $$ = ast_push_back($2, $1, LEFT); }
         | type_specifier
-        | type_specifier declaration_specifiers
+        | type_specifier declaration_specifiers { $$ = ast_push_back($2, $1, LEFT); }
         | type_qualifier
-        | type_qualifier declaration_specifiers
+        | type_qualifier declaration_specifiers { $$ = $2; }
         | function_specifier
-        | function_specifier declaration_specifiers
+        | function_specifier declaration_specifiers { $$ = $2; }
         ;
 
 function_specifier
-        : INLINE
+        : INLINE { $$ = NULL; }
         ;
 
 initialized_declarator_list
-        : initialized_declarator
-        | initialized_declarator_list ',' initialized_declarator
+        : initialized_declarator { $$ = $1; }
+        | initialized_declarator_list ',' initialized_declarator { $$ = ast_push_back($1,$3,NEXT); }
         ;
 
 initialized_declarator
@@ -81,11 +111,14 @@ initialized_declarator
         ;
 
 storage_class_specifier
-        : AUTO
-        | EXTERN
-        | REGISTER
-        | STATIC
-        | TYPEDEF
+        : AUTO { $$ = ast_newnode(AST_STORAGE); $$->attributes.storage_class = STORE_AUTO; }
+        | EXTERN { $$ = ast_newnode(AST_STORAGE); $$->attributes.storage_class = STORE_EXTERN; }
+        | REGISTER { $$ = ast_newnode(AST_STORAGE); $$->attributes.storage_class = STORE_REGISTER; }
+        | STATIC { $$ = ast_newnode(AST_STORAGE); $$->attributes.storage_class = STORE_STATIC; }
+        ;
+
+typedef_definition
+        : TYPEDEF { $$ = ast_newnode(AST_TYPEDEF);}
         ;
 
 type_specifier
@@ -99,9 +132,9 @@ type_specifier
         ;
 
 type_qualifier
-        : CONST
-        | VOLATILE
-        | RESTRICT
+        : CONST { $$ = NULL;}
+        | VOLATILE { $$ = NULL; }
+        | RESTRICT { $$ = NULL; }
         ;
 
 declarator
@@ -117,14 +150,22 @@ direct_declarator
         ;
 
 simple_declarator
-        : IDENT {   $$ = ast_newnode(AST_VAR);
-                    strcpy($$->attributes.identifier, yylval.yystring);
-                    $$->attributes.ln_effective = line_number;
-                    insert_ident(current_scope, yylval.yystring, $$, NAMESPACE_OTHER);}
+        : IDENT 
+            {
+                int ret;
+                $$ = ast_newnode(AST_VAR);
+                strcpy($$->attributes.identifier, yylval.yystring);
+                $$->attributes.ln_effective = line_number;
+                strcpy($$->attributes.file_name, filename);
+                ret = insert_ident(current_scope, yylval.yystring, $$, NAMESPACE_OTHER);
+                if (!ret){
+                    fprintf(stderr, "Error: Previous Declaration of Identifier %s - %s: %d\n", yylval.yystring, filename, line_number);
+                }
+            }
         ;
 
 pointer_declarator
-        : pointer direct_declarator {   $$ = ast_push_back($1,$2);ast_print_tree($1); } 
+        : pointer direct_declarator {   $$ = ast_push_back($1,$2,LEFT); } 
         ;
 
 type_qualifier_list
@@ -134,13 +175,13 @@ type_qualifier_list
 
 array_declarator
         : direct_declarator '[' ']'    {   $$ = ast_newnode(AST_ARRAY);
-                                                $$->next = $1;
+                                                $$->left = $1;
                                                 $$->attributes.size = -1;  } 
         | direct_declarator '[' constant_expression ']'     {   if ($3->type != AST_NUM){
                                                                     ast_print_syntax_error(filename, line_number);
                                                                 } else {
                                                                     $$ = ast_newnode(AST_ARRAY);
-                                                                    $$->next = $1;
+                                                                    $$->left = $1;
                                                                     $$->attributes.size = $3->attributes.num; } }
         | direct_declarator '[' array_qualifier_list ']'     /*{   $$ = ast_newnode(AST_ARRAY);
                                                                     $$->prev = $1;  }*/
@@ -206,7 +247,7 @@ integer_type_specifier
         | unsigned_type_specifier { $$ = ast_newnode(AST_SCALAR); 
                                         $$->attributes.num_signed = SIZE_UNSIGNED;
                                         $$->attributes.scalar_type = SCALAR_INT; }
-        | character_type_specifier
+        | character_type_specifier 
         | bool_type_specifier { $$ = ast_newnode(AST_SCALAR); 
                                         $$->attributes.num_signed = SIZE_SIGNED;
                                         $$->attributes.scalar_type = SCALAR_INT; }
@@ -254,10 +295,14 @@ character_type_specifier
         ;
 
 floating_point_specifier
-        : FLOAT
-        | DOUBLE
-        | LONG DOUBLE
-        | complex_type_specifier
+        : FLOAT { fprintf(stderr, "Warning: This compiler doesn't support floating point types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
+        | DOUBLE { fprintf(stderr, "Warning: This compiler doesn't support floating point types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
+        | LONG DOUBLE { fprintf(stderr, "Warning: This compiler doesn't support floating point types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
+        | complex_type_specifier { fprintf(stderr, "Warning: This compiler doesn't support floating point types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
         ;
 
 complex_type_specifier
@@ -267,12 +312,14 @@ complex_type_specifier
         ;
 
 bool_type_specifier
-        : _BOOL
+        : _BOOL { $$=NULL; }
         ;
 
 enumeration_type_specifier
-        : enumeration_type_definition
-        | enumeration_type_reference
+        : enumeration_type_definition { fprintf(stderr, "Warning: This compiler doesn't support enum types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
+        | enumeration_type_reference { fprintf(stderr, "Warning: This compiler doesn't support enum types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
         ;
 
 enumeration_type_definition
@@ -305,8 +352,10 @@ enumeration_constant
         ;
 
 structure_type_specifier
-        : structure_type_definition
-        | structure_type_reference
+        : structure_type_definition { fprintf(stderr, "Warning: This compiler doesn't support struct types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
+        | structure_type_reference { fprintf(stderr, "Warning: This compiler doesn't support struct types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
         ;
 
 structure_type_definition
@@ -355,8 +404,10 @@ width
         ;
 
 union_type_specifier
-        : union_type_definition
-        | union_type_reference
+        : union_type_definition { fprintf(stderr, "Warning: This compiler doesn't support union types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
+        | union_type_reference { fprintf(stderr, "Warning: This compiler doesn't support union types - %s: %d\n",
+                                                                 filename, line_number);$$ = NULL; }
         ;
 
 union_type_definition
@@ -373,11 +424,21 @@ union_tag
         ;
 
 void_type_specifier
-        : VOID
+        : VOID { $$=NULL; }
         ;
 
 typedef_name
-        : TYPEDEF_NAME
+        : TYPEDEF_NAME 
+            {
+                struct ast_node *t;
+                t = get_ident(current_scope, yylval.yystring, NAMESPACE_OTHER);
+                if (t->left != NULL && t->left->type == AST_TYPEDEF && t->left->left != NULL){
+                    $$ = t->left->left;
+                } else {
+                    fprintf(stderr, "Error: Problem with typedef - %s: %d\n", filename, line_number);
+                    $$ = NULL;
+                }
+            }
         ;
 
 type_name
@@ -394,8 +455,8 @@ abstract_declarator
 pointer
         : '*' { $$ = ast_newnode(AST_PTR); }
         | '*' type_qualifier_list { $$ = ast_newnode(AST_PTR); }
-        | '*' type_qualifier_list pointer { $$ = ast_newnode(AST_PTR); $$->next = $3; }
-        | '*' pointer { $$ = ast_newnode(AST_PTR); $$->next = $2; }
+        | '*' type_qualifier_list pointer { $$ = ast_newnode(AST_PTR); $$->left = $3; }
+        | '*' pointer { $$ = ast_newnode(AST_PTR); $$->left = $2; }
         ;
 
 direct_abstract_declarator
@@ -416,9 +477,15 @@ direct_abstract_declarator
 
 primary_expression
         : IDENT
-        | NUMBER { $$ = ast_newnode(AST_NUM); $$->attributes.num = yylval.yyint; }
-        | CHARLIT { $$ = ast_newnode(AST_CHAR); $$->attributes.num = (int)(yylval.yychar); }
-        | STRING { $$ = ast_newnode(AST_STR); strcpy($$->attributes.str, yylval.yystring); }
+            {
+                char *ident = yylval.yystring;
+                ident[yylval.yystring_size] = '\0';
+                struct ast_node *var = get_ident(current_scope, ident, NAMESPACE_OTHER);
+                $$ = var;
+            }
+        | NUMBER { $$ = ast_newnode(AST_NUM); $$->attributes.num = yylval.yyint; $$->attributes.ln_effective = line_number;}
+        | CHARLIT { $$ = ast_newnode(AST_CHAR); $$->attributes.num = (int)(yylval.yychar); $$->attributes.ln_effective = line_number;}
+        | STRING { $$ = ast_newnode(AST_STR); strcpy($$->attributes.str, yylval.yystring); $$->attributes.ln_effective = line_number;}
         | parenthesized_expression
         ;
 
@@ -437,12 +504,28 @@ postfix_expression
         ;
 
 subscript_expression
-        : postfix_expression '[' expression ']'
+        : postfix_expression '[' expression ']' 
+            {
+                $$ = ast_newnode(AST_UNOP);
+                $$->attributes.op = '*';
+                struct ast_node *new = ast_newnode(AST_BINOP);
+                struct ast_node *mult = ast_newnode(AST_BINOP);
+                struct ast_node *size = ast_newnode(AST_UNOP);
+                new->attributes.op = '+';
+                new->left = $1;
+                mult->attributes.op = '*';
+                mult->left = $3;
+                size->attributes.op = SIZEOF;
+                size->left = $1;
+                mult->right = size;
+                new->right = mult;
+                $$->left = new;
+            }
         ;
 
 component_selection_expression
-        : direct_component_selection
-        | indirect_component_selection
+        : direct_component_selection { $$ = NULL; }
+        | indirect_component_selection { $$ = NULL; }
         ;
 
 direct_component_selection
@@ -454,8 +537,8 @@ indirect_component_selection
         ;
 
 function_call
-        : postfix_expression '(' ')'
-        | postfix_expression '(' expression_list ')'
+        : postfix_expression '(' ')' { $$ = ast_newnode(AST_FNCALL); $$->left = $1; }
+        | postfix_expression '(' expression_list ')' { $$ = ast_newnode(AST_FNCALL); $$->left = $1; }
         ;
 
 expression_list
@@ -464,21 +547,21 @@ expression_list
         ;
 
 postincrement_expression
-        : postfix_expression PLUSPLUS { $$ = ast_newnode(AST_UNOP); $$->attributes.op = PLUSPLUS; }
+        : postfix_expression PLUSPLUS { $$ = ast_newnode(AST_UNOP); $$->attributes.op = POSTINC; $$->left = $1; }
         ;
 
 postdecrement_expression
-        : postfix_expression MINUSMINUS { $$ = ast_newnode(AST_UNOP); $$->attributes.op = MINUSMINUS; }
+        : postfix_expression MINUSMINUS { $$ = ast_newnode(AST_UNOP); $$->attributes.op = POSTDEC; $$->left = $1; }
         ;
 
 compound_literal
-        : '(' type_name ')' '{' initializer_list '}'
-        | '(' type_name ')' '{' initializer_list ',' '}'
+        : '(' type_name ')' '{' initializer_list '}' { $$ = NULL; }
+        | '(' type_name ')' '{' initializer_list ',' '}' { $$ = NULL; }
         ;
 
 cast_expression
         : unary_expression
-        | '(' type_name ')' cast_expression
+        | '(' type_name ')' cast_expression { ast_print_syntax_error(filename, line_number); $$=NULL; }
         ;
 
 unary_expression
@@ -495,40 +578,40 @@ unary_expression
         ;
 
 sizeof_expression
-        : SIZEOF '(' type_name ')'
-        | SIZEOF unary_expression
+        : SIZEOF '(' type_name ')' { $$ = ast_newnode(AST_UNOP); $$->attributes.op = SIZEOF; $$->left=$3; }
+        | SIZEOF unary_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = SIZEOF; $$->left=$2; }
         ;
 
 unary_minus_expression
-        : '-' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '-'; }
+        : '-' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '-'; $$->left=$2; }
         ;
 
 unary_plus_expression
-        : '+' cast_expression  { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '+'; }
+        : '+' cast_expression  { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '+'; $$->left=$2; }
         ;
 
 logical_negation_expression
-        : '!' cast_expression  { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '!'; }
+        : '!' cast_expression  { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '!'; $$->left=$2; }
         ;
 
 bitwise_negation_expression
-        : '~' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '~'; } 
+        : '~' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '~'; $$->left=$2; } 
         ;
 
 address_expression
-        : '&' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '&'; }
+        : '&' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '&'; $$->left=$2; }
         ;
 
 indirection_expression
-        : '*' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '*'; }
+        : '*' cast_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = '*'; $$->left=$2; }
         ;
 
 preincrement_expression
-        : PLUSPLUS unary_expression
+        : PLUSPLUS unary_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = PREINC; $$->left=$2; }
         ;
 
 predecrement_expression
-        : MINUSMINUS unary_expression
+        : MINUSMINUS unary_expression { $$ = ast_newnode(AST_UNOP); $$->attributes.op = PREINC; $$->left=$2; }
         ;
 
 multiplicative_expression
@@ -634,47 +717,69 @@ constant_expression
         : conditional_expression
         ;
 
-/*constant_expression*/
-        /*: constant_expression '?' expression ':' constant_expression*/
-        /*| constant_expression LOGOR constant_expression*/
-        /*| constant_expression LOGAND constant_expression*/
-        /*| constant_expression '|' constant_expression*/
-        /*| constant_expression '^' constant_expression*/
-        /*| constant_expression '&' constant_expression*/
-        /*| constant_expression EQEQ constant_expression*/
-        /*| constant_expression NOTEQ constant_expression*/
-        /*| constant_expression '<' constant_expression*/
-        /*| constant_expression '>' constant_expression*/
-        /*| constant_expression LTEQ constant_expression*/
-        /*| constant_expression GTEQ constant_expression*/
-        /*| constant_expression SHL constant_expression*/
-        /*| constant_expression SHR constant_expression*/
-        /*| constant_expression '+' constant_expression*/
-        /*| constant_expression '-' constant_expression*/
-        /*| constant_expression '*' constant_expression*/
-        /*| constant_expression '/' constant_expression*/
-        /*| constant_expression '%' constant_expression*/
-        /*| cast_expression*/
-        /*;*/
-
-
 assignment_expression
         : constant_expression
-        | unary_expression assignment_operator assignment_expression    {{ if (debug){fprintf(stderr, "assignment expression\n");} }}
+        | unary_expression assignment_operator assignment_expression
+            {
+                $$ = ast_newnode(AST_ASSGN);
+                $$->left = $1;
+                if ($2 == '='){
+                    $$->right = $3;
+                } else {
+                    struct ast_node *right;
+                    right = ast_newnode(AST_BINOP);
+                    right->left = $1;
+                    right->right = $3;
+                    switch ($2){
+                        case TIMESEQ:
+                            right->attributes.op = '*';
+                            break;
+                        case DIVEQ:
+                            right->attributes.op = '/';
+                            break;
+                        case MODEQ:
+                            right->attributes.op = '%';
+                            break;
+                        case PLUSEQ:
+                            right->attributes.op = '+';
+                            break;
+                        case MINUSEQ:
+                            right->attributes.op = '-';
+                            break;
+                        case SHLEQ:
+                            right->attributes.op = SHL;
+                            break;
+                        case SHREQ:
+                            right->attributes.op = SHR;
+                            break;
+                        case ANDEQ:
+                            right->attributes.op = '&';
+                            break;
+                        case OREQ:
+                            right->attributes.op = '|';
+                            break;
+                        case XOREQ:
+                            right->attributes.op = '^';
+                            break;
+
+                    }
+                $$->right = right;
+                }
+            }
         ;
 
 assignment_operator
-        : '='
-        | TIMESEQ
-        | DIVEQ
-        | MODEQ
-        | PLUSEQ
-        | MINUSEQ
-        | SHLEQ
-        | SHREQ
-        | ANDEQ
-        | OREQ
-        | XOREQ
+        : '=' { $$ = '='; }
+        | TIMESEQ { $$ = TIMESEQ; }
+        | DIVEQ { $$ = DIVEQ; }
+        | MODEQ { $$ = MODEQ; }
+        | PLUSEQ { $$ = PLUSEQ; }
+        | MINUSEQ { $$ = MINUSEQ; }
+        | SHLEQ { $$ = SHLEQ; }
+        | SHREQ { $$ = SHREQ; }
+        | ANDEQ { $$ = ANDEQ; }
+        | OREQ { $$ = OREQ; }
+        | XOREQ { $$ = XOREQ; }
         ;
 
 expression
@@ -684,10 +789,8 @@ expression
 
 statement
         : expression_statement    {{ if (debug){fprintf(stderr, "expression statement\n");} }}
-        | labeled_statement    {{ if (debug){fprintf(stderr, "labeled statement\n");} }}
-        | compound_statement    {   struct sym_table *new_scope = sym_table_new(filename, BLOCK_SCOPE, line_number, current_scope); 
-                                        current_scope = new_scope;
-                                        if (debug){fprintf(stderr, "compound statement\n");}}
+        | labeled_statement    { if (debug){fprintf(stderr, "labeled statement\n");} }
+        | compound_statement    {  if (debug){fprintf(stderr, "compound statement\n");}}
         | conditional_statement    {{ if (debug){fprintf(stderr, "conditional statement\n");} }}
         | iterative_statement    {{ if (debug){fprintf(stderr, "iterative statement\n");} }}
         | switch_statement    {{ if (debug){fprintf(stderr, "switch statement\n");} }}
@@ -699,7 +802,7 @@ statement
         ;
 
 expression_statement
-        : expression ';'
+        : expression ';' { $$ = $1; if (debug){fprintf(stderr, "expression\n");} }
         ;
 
 labeled_statement
@@ -719,13 +822,13 @@ compound_statement
         ;
 
 declaration_or_statement_list
-        : declaration_or_statement
-        | declaration_or_statement_list declaration_or_statement
+        : declaration_or_statement { $$ = $1; }
+        | declaration_or_statement_list declaration_or_statement { $$ = ast_push_back($1, $2, NEXT); }
         ;
 
 declaration_or_statement
-        : declaration    {{ if (debug){fprintf(stderr, "declaration\n");} }}
-        | statement    {{ if (debug){fprintf(stderr, "statement\n");} }}
+        : declaration    { if (print_ast && 0){ ast_print_tree(NULL);} }
+        | statement    { if (print_ast && 0){ ast_print_node($1, 1);} }
         ;
 
 conditional_statement
@@ -734,11 +837,22 @@ conditional_statement
         ;
 
 if_statement
-        : IF '(' expression ')'
+        : IF '(' expression ')' statement
+            {
+                $$ = ast_newnode(AST_IF);
+                $$->cond = $3;
+                $$->body = $5;
+            }
         ;
 
 if_else_statement
-        : IF '(' expression ')' ELSE statement
+        : IF '(' expression ')' statement ELSE statement
+            {
+                $$ = ast_newnode(AST_IF);
+                $$->cond = $3;
+                $$->body = $5;
+                $$->other = $7;
+            }
         ;
 
 iterative_statement
@@ -749,24 +863,34 @@ iterative_statement
 
 do_statement
         : DO statement WHILE '(' expression ')' ';'
+            {
+                $$ = ast_newnode(AST_DO);
+                $$->cond = $5;
+                $$->body = $2;
+            }
         ;
 
 while_statement
         : WHILE '(' expression ')' statement
+            {
+                $$ = ast_newnode(AST_WHILE);
+                $$->cond = $3;
+                $$->body = $5;
+            }
         ;
 
 for_statement
-        : FOR for_expressions statement
+        : FOR for_expressions statement { $$ = $2; $$->body = $3; }
         ;
 
 for_expressions
-        : '(' ';' ';' ')'
-        | '(' initial_clause ';' ';' ')'
-        | '(' ';' expression ';' ')'
-        | '(' ';' ';' expression ')'
-        | '(' initial_clause ';' expression ';' ')'
-        | '(' ';' expression ';' expression ')'
-        | '(' initial_clause ';' expression ';' expression ')'
+        : '(' ';' ';' ')' { $$ = ast_newnode(AST_FOR); }
+        | '(' initial_clause ';' ';' ')' { $$ = ast_newnode(AST_FOR); $$->left = $2; }
+        | '(' ';' expression ';' ')' { $$ = ast_newnode(AST_FOR); $$->cond = $3; }
+        | '(' ';' ';' expression ')' { $$ = ast_newnode(AST_FOR); $$->right = $4; }
+        | '(' initial_clause ';' expression ';' ')' { $$ = ast_newnode(AST_FOR); $$->left = $2; $$->cond = $4; }
+        | '(' ';' expression ';' expression ')' { $$ = ast_newnode(AST_FOR); $$->cond = $3; $$->right = $5; }
+        | '(' initial_clause ';' expression ';' expression ')' { $$ = ast_newnode(AST_FOR); $$->left = $2; $$->cond = $4; $$->right = $6; }
         ;
 
 initial_clause
@@ -776,6 +900,11 @@ initial_clause
 
 switch_statement
         : SWITCH '(' expression ')' statement
+            {
+                $$ = ast_newnode(AST_SWITCH);
+                $$->cond = $3;
+                $$->body = $5;
+            }
         ;
 
 case_label
@@ -804,11 +933,11 @@ goto_statement
         ;
 
 named_label
-        : IDENT {insert_ident(current_scope, yylval.yystring, NULL, NAMESPACE_LABELS);}
+        : IDENT 
         ;
 
 null_statement
-        : ';'
+        : ';' { $$ = NULL; }
         ;
 
 translation_unit
@@ -823,7 +952,7 @@ top_level_declaration
 
 function_definition
         : function_def_specifier '{' { current_scope = sym_table_new(filename, FUNCTION_SCOPE, line_number, current_scope); } 
-            declaration_or_statement_list '}' { current_scope = sym_table_pop(current_scope); }
+            declaration_or_statement_list '}' { current_scope = sym_table_pop(current_scope); if (print_ast){ast_dump($4);} }
         ;
 
 function_def_specifier
@@ -840,10 +969,10 @@ declaration_list
 
 function_declarator
         : direct_declarator '(' parameter_type_list ')' { fprintf(stderr, "Warning: This compiler doesn't support function prototypes - %s: %d\n",
-                                                                 filename, line_number); }
-        | direct_declarator '(' ')' { ast_print_tree($1); $$ = ast_newnode(AST_FN); ast_push_back($$,$1); }
+                                                                 filename, line_number);$$ = ast_newnode(AST_FN); ast_push_back($$,$1,LEFT); }
+        | direct_declarator '(' ')' { $$ = ast_newnode(AST_FN); ast_push_back($$,$1,LEFT); }
         | direct_declarator '(' identifier_list ')' { fprintf(stderr, "Warning: This compiler doesn't support function arguments - %s: %d\n",
-                                                                filename, line_number); }
+                                                                filename, line_number);$$ = ast_newnode(AST_FN); ast_push_back($$,$1,LEFT); }
         ;
 
 parameter_type_list
@@ -891,9 +1020,9 @@ int main(int argc, char** argv){
         infile = argv[optind];
         yyin = fopen(argv[optind], "r");
     } else {
-        strcpy(filename, "stdin");
+        strcpy(filename, "<stdin>");
         line_number=1;
-        infile = "stdin";
+        infile = "<stdin>";
         yyin = stdin;
     }
     current_scope = sym_table_new(infile, FILE_SCOPE, 1, NULL);

@@ -38,29 +38,45 @@ int insert_ident(struct sym_table *cur, char *ident, void *ptr, int namesp){
     struct sym_table *sym_prev = cur;
     while (sym_prev != NULL){
         if (hashTable_contains(sym_prev->symbols[namesp], ident)){
-            fprintf(stderr, "Error: Previous Declaration of Identifier %s\n", ident);
             return 0;
         }
         sym_prev = sym_prev->prev;
     }
     hashTable_insert(cur->symbols[namesp], ident, ptr);
-    /*if (debug){*/
-        /*printf("Inserting %s into %d\n", ident, namesp);*/
-        /*hashTable_print(cur->symbols[namesp]);*/
-    /*}*/
+    if (debug){
+        printf("Inserting %s into %d - %p\n", ident, namesp, ptr);
+        hashTable_print(cur->symbols[namesp]);
+    }
     return 1;
 }
 
 void * get_ident(struct sym_table *cur, char* ident, int namesp){
+    struct sym_table *sym_prev = cur;
     void * ret = NULL;
-    int b = 0;
-    while (!b && cur != NULL){
-        ret = hashTable_getPointer(cur->symbols[namesp], ident, &b);
-        cur = cur->prev;
+    while (sym_prev != NULL){
+        if (hashTable_contains(sym_prev->symbols[namesp], ident)){
+            ret = hashTable_getPointer(sym_prev->symbols[namesp], ident, NULL);
+            return ret;
+        }
+        sym_prev = sym_prev->prev;
     }
-    if (!b){
-        fprintf(stderr, "Error: No Previous Declaration of Identifier %s - %s:%d\n", ident, filename, line_number);
-        return NULL;
-    }
+    if (debug){
+        printf("Identifier %s not found\n", ident);
+    }        
     return ret;
+
+    /*void * ret = NULL;*/
+    /*int b = 0;*/
+    /*while (!b && cur != NULL){*/
+        /*ret = hashTable_getPointer(cur->symbols[namesp], ident, &b);*/
+        /*cur = cur->prev;*/
+    /*}*/
+    /*if (!b){*/
+        /*if (debug){*/
+            /*printf("Identifier %s not found\n", ident);*/
+        /*}        */
+        /*[>fprintf(stderr, "Error: No Previous Declaration of Identifier %s - %s:%d\n", ident, filename, line_number);<]*/
+        /*return NULL;*/
+    /*}*/
+    /*return ret;*/
 }

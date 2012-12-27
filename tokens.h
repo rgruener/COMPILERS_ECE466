@@ -23,10 +23,12 @@ typedef struct {
     char yychar;
     char * yystring;
     unsigned long long int yyint;
+    unsigned int yystring_size;
     long double yydouble;
     enum number_size n_size;
     enum number_size n_signed;
     struct ast_node *node;
+    struct ast_node_list *node_list;
 } YYSTYPE;
 
 #define YYSTYPE YYSTYPE

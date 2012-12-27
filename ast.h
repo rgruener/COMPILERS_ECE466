@@ -12,11 +12,16 @@
 #include "tokens.h"
 #include "symbol_table.h"
 
+#define LEFT 1
+#define NEXT 2
+
 enum ast_type {
     AST_VAR=0,
     AST_PTR,
     AST_ARRAY,
     AST_FN,
+    AST_TYPEDEF,
+    AST_STORAGE,
     AST_SCALAR,
     AST_STRUCT,
     AST_UNION,
@@ -24,7 +29,21 @@ enum ast_type {
     AST_STR,
     AST_CHAR,
     AST_BINOP,
-    AST_UNOP
+    AST_UNOP,
+    AST_ASSGN,
+    AST_FNCALL,
+    AST_FOR,
+    AST_IF,
+    AST_WHILE,
+    AST_DO,
+    AST_SWITCH
+};
+
+enum storage_class {
+    STORE_AUTO = 0,
+    STORE_EXTERN,
+    STORE_REGISTER,
+    STORE_STATIC
 };
 
 enum scalar_type {
@@ -40,6 +59,9 @@ struct ast_node {
     struct ast_node *left;
     struct ast_node *right;
     struct ast_node *next;
+    struct ast_node *cond;
+    struct ast_node *body;
+    struct ast_node *other;
     struct atts {
         int num;
         int op;
@@ -49,17 +71,28 @@ struct ast_node {
         int size;
         int num_signed;
         enum scalar_type scalar_type;
+        enum storage_class storage_class;
         int ln_effective;
+        char file_name[256];
     } attributes;
+};
+
+struct ast_node_list {
+    struct ast_node *nodes[4096];
+    int size;
 };
 
 struct ast_node * ast_newnode(int type);
 
-struct ast_node * ast_reverse_tree(struct ast_node *root);
+struct ast_node * ast_reverse_tree(struct ast_node *root, int which);
 
-struct ast_node * ast_push_back(struct ast_node *root, struct ast_node *new_node);
+struct ast_node * ast_push_back(struct ast_node *root, struct ast_node *new_node, int which);
 
 void ast_print_syntax_error(char *file_name, int line_number);
+
+void ast_dump(struct ast_node *root);
+
+void ast_print_node(struct ast_node *root, int tabs);
 
 void ast_print_tree(struct ast_node *root);
 

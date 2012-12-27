@@ -10,6 +10,8 @@
 #include <string.h>
 #include "tokens.h"
 #include "parser.tab.h"
+#include "ast.h"
+#include "symbol_table.h"
 
 int line_number;
 char filename[256];
@@ -107,10 +109,10 @@ char *string_buf_ptr;
 "_Complex" {return _COMPLEX;}
 "_Imaginary" {return _IMAGINARY;}
 "\n" {line_number++;}
-[_A-Za-z][_A-Za-z0-9]* {yylval.yystring = yytext; return IDENT;}
+[_A-Za-z][_A-Za-z0-9]* {yylval.yystring = yytext; yylval.yystring_size = strlen(yytext); return check_type();}
 L?\' {BEGIN(IN_CHAR); string_buf_ptr = string_buffer;} /* Char Literals */
 <IN_CHAR>{
-\' {BEGIN(0); *string_buf_ptr = '\0'; return CHARLIT;}
+\' {BEGIN(0); *string_buf_ptr = '\0'; yylval.yychar = string_buffer[0]; return CHARLIT;}
 \n {/* error - unterminated string constand */;}
 \\0 {*string_buf_ptr++='\0';}
 \\a {*string_buf_ptr++='\a';}
@@ -149,7 +151,7 @@ L?\' {BEGIN(IN_CHAR); string_buf_ptr = string_buffer;} /* Char Literals */
 }
 L?\" {string_buf_ptr=string_buffer; BEGIN(IN_STRING);} /* String Literals */
 <IN_STRING>{
-\" {BEGIN(0); *string_buf_ptr = '\0'; return STRING;}
+\" {BEGIN(0); *string_buf_ptr = '\0'; yylval.yystring = string_buffer; return STRING;}
 \n {/* error - unterminated string constand */;}
 \\0 {*string_buf_ptr++='\0';}
 \\a {*string_buf_ptr++='\a';}
@@ -420,7 +422,13 @@ L?\"(\\.|[^\\\"])*\" {strncpy(filename, yytext+1, strlen(yytext)-2);filename[str
 
 %%
 
-char oct_to_dec(char *oct){
+int check_type(){
+    extern struct sym_table *current_scope;
+    struct ast_node *cur = get_ident(current_scope, yytext, NAMESPACE_OTHER);
+    if (cur != NULL && cur->left != NULL && cur->left->type == AST_TYPEDEF){
+        return TYPEDEF_NAME;
+    }
+    return IDENT;
 }
 
 int print_chars(char *str, char *end){
