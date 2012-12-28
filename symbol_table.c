@@ -43,10 +43,10 @@ int insert_ident(struct sym_table *cur, char *ident, void *ptr, int namesp){
         sym_prev = sym_prev->prev;
     }
     hashTable_insert(cur->symbols[namesp], ident, ptr);
-    if (debug){
-        printf("Inserting %s into %d - %p\n", ident, namesp, ptr);
-        hashTable_print(cur->symbols[namesp]);
-    }
+    /*if (debug){*/
+        /*printf("Inserting %s into %d - %p\n", ident, namesp, ptr);*/
+        /*hashTable_print(cur->symbols[namesp]);*/
+    /*}*/
     return 1;
 }
 
@@ -60,9 +60,9 @@ void * get_ident(struct sym_table *cur, char* ident, int namesp){
         }
         sym_prev = sym_prev->prev;
     }
-    if (debug){
-        printf("Identifier %s not found\n", ident);
-    }        
+    /*if (debug){*/
+        /*printf("Identifier %s not found\n", ident);*/
+    /*}        */
     return ret;
 
     /*void * ret = NULL;*/

@@ -45,6 +45,9 @@ struct ast_node * ast_reverse_tree(struct ast_node *root, int which){
 }
 
 struct ast_node * ast_push_back(struct ast_node *root, struct ast_node *new_node, int which){
+    if  (root == NULL){
+        return new_node;
+    }
     if (which == NEXT){
         struct ast_node *next = root->next;
         struct ast_node *tmp = root;
@@ -65,12 +68,29 @@ struct ast_node * ast_push_back(struct ast_node *root, struct ast_node *new_node
     return NULL;
 }
 
+int ast_list_size(struct ast_node *root, int which){
+    int size=0;
+    while (root != NULL){
+        if (which == NEXT){
+            root = root->next;
+        } else if (which == LEFT){
+            root = root->left;
+        }
+        size++;
+    }
+    return size;
+}
+
 void ast_print_syntax_error(char *file_name, int line_number){
     fprintf(stderr, "The syntax in %s: %d is not supported\n", file_name, line_number);
 }
 
-void ast_dump(struct ast_node *root){
-    printf("AST DUMP for function\n");
+void ast_dump(struct ast_node *root, char *fn_name){
+    if (fn_name != NULL){
+        printf("\nAST DUMP for function %s\n", fn_name);
+    } else {
+        printf("\nAST DUMP for function (NIL)\n");
+    }
     printf("\tLIST {\n");
     while (root != NULL){
         ast_print_node(root, 2);
@@ -80,7 +100,7 @@ void ast_dump(struct ast_node *root){
 }
 
 void ast_print_node(struct ast_node *root, int tabs){
-    int i;
+    int i, size;
     char tab_string[100];
     for (i=0; i<tabs; i++){
         /*printf("\t");*/
@@ -97,8 +117,13 @@ void ast_print_node(struct ast_node *root, int tabs){
             printf("%svariable name=%s def @%s:%d\n", tab_string, root->attributes.identifier, root->attributes.file_name, root->attributes.ln_effective);
             break;
         case AST_FNCALL:
-            printf("%sFNCALL, no arguments\n", tab_string);
+            size = ast_list_size(root->right, NEXT);
+            printf("%sFNCALL, %d arguments\n", tab_string, size);
             ast_print_node(root->left, tabs+1);
+            for (i=0; i<size; i++){
+                printf("%sarg #%d=\n", tab_string, i+1);
+                ast_print_node(root->right, tabs+1);
+            }
             break;
         case AST_NUM:
             printf("%sCONSTANT: (type=int):%d\n", tab_string, root->attributes.num);
@@ -130,58 +155,58 @@ void ast_print_node(struct ast_node *root, int tabs){
             printf("%sBINARY OP ", tab_string);
             switch (root->attributes.op){
                 case '*':
-                    printf("MULTIPLICATION\n");
+                    printf("*\n");
                     break;
                 case '/':
-                    printf("DIVISION\n");
+                    printf("/\n");
                     break;
                 case '%':
-                    printf("MODULO\n");
+                    printf("%%\n");
                     break;
                 case '+':
-                    printf("ADDITION\n");
+                    printf("+\n");
                     break;
                 case '-':
-                    printf("SUBTRACTION\n");
+                    printf("-\n");
                     break;
                 case SHL:
-                    printf("SHL\n");
+                    printf("<<\n");
                     break;
                 case SHR:
-                    printf("SHR\n");
+                    printf(">>\n");
                     break;
                 case '<':
-                    printf("LESS THAN\n");
+                    printf("<\n");
                     break;
                 case '>':
-                    printf("GREATER THAN\n");
+                    printf(">\n");
                     break;
                 case LTEQ:
-                    printf("LTEQ\n");
+                    printf("<=\n");
                     break;
                 case GTEQ:
-                    printf("GTEQ\n");
+                    printf(">=\n");
                     break;
                 case EQEQ:
-                    printf("EQEQ\n");
+                    printf("==\n");
                     break;
                 case NOTEQ:
-                    printf("NOTEQ\n");
+                    printf("!=\n");
                     break;
                 case '&':
-                    printf("AND\n");
+                    printf("&\n");
                     break;
                 case '|':
-                    printf("OR\n");
+                    printf("|\n");
                     break;
                 case '^':
-                    printf("XOR\n");
+                    printf("^\n");
                     break;
                 case LOGAND:
-                    printf("LOGAND\n");
+                    printf("&&\n");
                     break;
                 case LOGOR:
-                    printf("LOGOR\n");
+                    printf("||\n");
                     break;
             }
             ast_print_node(root->left, tabs+1);
@@ -253,7 +278,7 @@ void ast_print_tree(struct ast_node *root){
         switch (root->type){
             case AST_VAR:
                 printf("Variable %s, FILE: %s - %d, SCOPE: %d, SCOPE START: %s - %d ", root->attributes.identifier, 
-                            current_scope->file_name, root->attributes.ln_effective, current_scope->scope,
+                            current_scope->file_name, root->attributes.ln_effective, root->scope,
                             current_scope->file_name, current_scope->line_begin);
                 if (root->left->type == AST_STORAGE){
                     printf("Storage class: ");

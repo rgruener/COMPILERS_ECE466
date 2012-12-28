@@ -10,6 +10,7 @@
 #include "tokens.h"
 #include "symbol_table.h"
 #include "ast.h"
+#include "quads.h"
 
 extern int yylex();
 extern int yyleng;
@@ -20,6 +21,8 @@ int yyerror(const char *p) {fprintf(stderr, "ERROR: unrecognized syntax: %s\n", 
 
 int debug=0;
 int print_ast=0;
+int print_declarations=0;
+int print_quads=0;
 
 struct sym_table *current_scope;
 %}
@@ -48,6 +51,7 @@ struct sym_table *current_scope;
 %type<node> initialized_declarator_list function_call sizeof_expression component_selection_expression compound_literal
 %type<node> if_statement if_else_statement for_expressions for_statement while_statement do_statement switch_statement initial_clause
 %type<node> conditional_expression declaration_or_statement_list declaration_or_statement function_definition function_def_specifier
+%type<node> expression_list compound_statement iterative_statement conditional_statement
 %type<yyint> assignment_operator
 
 %start translation_unit
@@ -61,25 +65,28 @@ declaration
                 int i;
                 struct ast_node *head = $2;
                 while ($2 != NULL){
-                        
                     struct ast_node *var_type = $1;
-                    while (var_type->type == AST_STORAGE){
+                    while (var_type != NULL && var_type->type == AST_STORAGE){
                         var_type = var_type->left;
                     }
-                    ast_push_back(var_type, $2,LEFT);
+                    var_type = ast_push_back(var_type, $2,LEFT);
                     $$ = ast_reverse_tree(var_type, LEFT);
                     if ($1->type == AST_STORAGE){
                         struct ast_node *tmp = $$->left;
                         struct ast_node *this = $1;
-                        while (this->left->type == AST_STORAGE){
+                        while (this->left != NULL && this->left->type == AST_STORAGE){
                             this = this->left;
                         }
                         this->left = tmp;
                         $$->left = $1;
                     }
+                    if (print_declarations){
+                        ast_print_tree($2);
+                    }
                     $2 = $2->next;
                 }
                 $$ = head;
+                $$ = NULL;
             }
         ;
 
@@ -106,8 +113,8 @@ initialized_declarator_list
         ;
 
 initialized_declarator
-        : declarator {if(debug)printf("declarator\n");}
-        | declarator '=' initializer
+        : declarator
+        | declarator '=' initializer { $$ = $1; }
         ;
 
 storage_class_specifier
@@ -138,15 +145,15 @@ type_qualifier
         ;
 
 declarator
-        : pointer_declarator {if(debug)printf("pointer_declarator\n");}
-        | direct_declarator {if(debug)printf("direct_declarator\n");}
+        : pointer_declarator
+        | direct_declarator
         ;
 
 direct_declarator
-        : simple_declarator {if(debug)printf("simple_declarator\n");}
-        | '(' declarator ')' {if(debug)printf("parenthasized_declarator\n"); $$ = $2;} 
-        | function_declarator {if(debug)printf("function_declarator\n");}
-        | array_declarator {if(debug)printf("array_declarator\n");}
+        : simple_declarator
+        | '(' declarator ')' {$$ = $2;} 
+        | function_declarator 
+        | array_declarator
         ;
 
 simple_declarator
@@ -154,6 +161,7 @@ simple_declarator
             {
                 int ret;
                 $$ = ast_newnode(AST_VAR);
+                $$->scope = current_scope->scope;
                 strcpy($$->attributes.identifier, yylval.yystring);
                 $$->attributes.ln_effective = line_number;
                 strcpy($$->attributes.file_name, filename);
@@ -509,16 +517,9 @@ subscript_expression
                 $$ = ast_newnode(AST_UNOP);
                 $$->attributes.op = '*';
                 struct ast_node *new = ast_newnode(AST_BINOP);
-                struct ast_node *mult = ast_newnode(AST_BINOP);
-                struct ast_node *size = ast_newnode(AST_UNOP);
                 new->attributes.op = '+';
                 new->left = $1;
-                mult->attributes.op = '*';
-                mult->left = $3;
-                size->attributes.op = SIZEOF;
-                size->left = $1;
-                mult->right = size;
-                new->right = mult;
+                new->right = $3;
                 $$->left = new;
             }
         ;
@@ -538,12 +539,17 @@ indirect_component_selection
 
 function_call
         : postfix_expression '(' ')' { $$ = ast_newnode(AST_FNCALL); $$->left = $1; }
-        | postfix_expression '(' expression_list ')' { $$ = ast_newnode(AST_FNCALL); $$->left = $1; }
+        | postfix_expression '(' expression_list ')' 
+            {
+                $$ = ast_newnode(AST_FNCALL);
+                $$->left = $1;
+                $$->right = $3;
+            }
         ;
 
 expression_list
         : assignment_expression
-        | expression_list ',' assignment_expression
+        | expression_list ',' assignment_expression { $$ = ast_push_back($1, $3, NEXT); }
         ;
 
 postincrement_expression
@@ -788,21 +794,21 @@ expression
         ;
 
 statement
-        : expression_statement    {{ if (debug){fprintf(stderr, "expression statement\n");} }}
-        | labeled_statement    { if (debug){fprintf(stderr, "labeled statement\n");} }
-        | compound_statement    {  if (debug){fprintf(stderr, "compound statement\n");}}
-        | conditional_statement    {{ if (debug){fprintf(stderr, "conditional statement\n");} }}
-        | iterative_statement    {{ if (debug){fprintf(stderr, "iterative statement\n");} }}
-        | switch_statement    {{ if (debug){fprintf(stderr, "switch statement\n");} }}
-        | break_statement    {{ if (debug){fprintf(stderr, "break statement\n");} }}
-        | continue_statement    {{ if (debug){fprintf(stderr, "continue statement\n");} }}
-        | return_statement    {{ if (debug){fprintf(stderr, "return statement\n");} }}
-        | goto_statement    {{ if (debug){fprintf(stderr, "goto statement\n");} }}
-        | null_statement    {{ if (debug){fprintf(stderr, "null statement\n");} }}
+        : expression_statement 
+        | labeled_statement { $$ = NULL; }
+        | compound_statement
+        | conditional_statement 
+        | iterative_statement 
+        | switch_statement 
+        | break_statement { $$ = NULL; }
+        | continue_statement { $$ = NULL; }
+        | return_statement { $$ = NULL; } 
+        | goto_statement { $$ = NULL; }
+        | null_statement
         ;
 
 expression_statement
-        : expression ';' { $$ = $1; if (debug){fprintf(stderr, "expression\n");} }
+        : expression ';' { $$ = $1; }
         ;
 
 labeled_statement
@@ -816,7 +822,7 @@ label
         ;
 
 compound_statement
-        : '{' '}'
+        : '{' '}' { $$ = NULL; }
         | '{' { current_scope = sym_table_new(filename, BLOCK_SCOPE, line_number, current_scope); } 
             declaration_or_statement_list '}' { current_scope = sym_table_pop(current_scope); }
         ;
@@ -827,8 +833,8 @@ declaration_or_statement_list
         ;
 
 declaration_or_statement
-        : declaration    { if (print_ast && 0){ ast_print_tree(NULL);} }
-        | statement    { if (print_ast && 0){ ast_print_node($1, 1);} }
+        : declaration
+        | statement
         ;
 
 conditional_statement
@@ -941,23 +947,45 @@ null_statement
         ;
 
 translation_unit
-        : top_level_declaration    {{ if (debug){fprintf(stderr, "top_level_declaration\n");} }}
+        : top_level_declaration
         | translation_unit top_level_declaration
         ;
 
 top_level_declaration
-        : declaration {{ if(debug){puts("declaration");}}}
-        | function_definition {{ if(debug){puts("function_definition");}}}
+        : declaration
+        | function_definition
         ;
 
 function_definition
         : function_def_specifier '{' { current_scope = sym_table_new(filename, FUNCTION_SCOPE, line_number, current_scope); } 
-            declaration_or_statement_list '}' { current_scope = sym_table_pop(current_scope); if (print_ast){ast_dump($4);} }
+            declaration_or_statement_list '}' 
+                { 
+                    current_scope = sym_table_pop(current_scope);
+                    if (print_ast) ast_dump($4, $1->attributes.identifier);
+                    quads_generate_function($1, $4);
+                }
         ;
 
 function_def_specifier
-        : declarator
-        | declaration_specifiers declarator
+        : declarator { $$ = ast_reverse_tree($1, LEFT); }
+        | declaration_specifiers declarator 
+            { 
+                struct ast_node *var_type = $1;
+                while (var_type->type == AST_STORAGE){
+                    var_type = var_type->left;
+                }
+                ast_push_back(var_type, $2,LEFT);
+                $$ = ast_reverse_tree(var_type, LEFT);
+                if ($1->type == AST_STORAGE){
+                    struct ast_node *tmp = $$->left;
+                    struct ast_node *this = $1;
+                    while (this->left->type == AST_STORAGE){
+                        this = this->left;
+                    }
+                    this->left = tmp;
+                    $$->left = $1;
+                }
+            }
         | declarator declaration_list
         | declaration_specifiers declarator declaration_specifiers
         ;
@@ -1002,13 +1030,19 @@ int main(int argc, char** argv){
     char *infile;
     int c;
     
-    while ((c=getopt(argc, argv, "da")) != -1){
+    while ((c=getopt(argc, argv, "dazq")) != -1){
         switch(c){
-            case 'd':
+            case 'z':
                 debug = 1;
                 break;
             case 'a':
                 print_ast = 1;
+                break;
+            case 'd':
+                print_declarations = 1;
+                break;
+            case 'q':
+                print_quads = 1;
                 break;
             default:
                 fprintf(stderr, "invalid argument: %c\n", c);

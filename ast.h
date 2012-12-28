@@ -36,7 +36,8 @@ enum ast_type {
     AST_IF,
     AST_WHILE,
     AST_DO,
-    AST_SWITCH
+    AST_SWITCH,
+    AST_TMP
 };
 
 enum storage_class {
@@ -62,6 +63,7 @@ struct ast_node {
     struct ast_node *cond;
     struct ast_node *body;
     struct ast_node *other;
+    int scope;
     struct atts {
         int num;
         int op;
@@ -78,7 +80,7 @@ struct ast_node {
 };
 
 struct ast_node_list {
-    struct ast_node *nodes[4096];
+    struct ast_node *head, *tail;
     int size;
 };
 
@@ -88,9 +90,11 @@ struct ast_node * ast_reverse_tree(struct ast_node *root, int which);
 
 struct ast_node * ast_push_back(struct ast_node *root, struct ast_node *new_node, int which);
 
+int ast_list_size(struct ast_node *root, int which);
+
 void ast_print_syntax_error(char *file_name, int line_number);
 
-void ast_dump(struct ast_node *root);
+void ast_dump(struct ast_node *root, char *fn_name);
 
 void ast_print_node(struct ast_node *root, int tabs);
 

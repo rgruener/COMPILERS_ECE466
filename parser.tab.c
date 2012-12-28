@@ -75,6 +75,7 @@
 #include "tokens.h"
 #include "symbol_table.h"
 #include "ast.h"
+#include "quads.h"
 
 extern int yylex();
 extern int yyleng;
@@ -85,12 +86,14 @@ int yyerror(const char *p) {fprintf(stderr, "ERROR: unrecognized syntax: %s\n", 
 
 int debug=0;
 int print_ast=0;
+int print_declarations=0;
+int print_quads=0;
 
 struct sym_table *current_scope;
 
 
 /* Line 268 of yacc.c  */
-#line 94 "parser.tab.c"
+#line 97 "parser.tab.c"
 
 /* Enabling traces.  */
 #ifndef YYDEBUG
@@ -201,7 +204,7 @@ struct sym_table *current_scope;
 
 
 /* Line 343 of yacc.c  */
-#line 205 "parser.tab.c"
+#line 208 "parser.tab.c"
 
 #ifdef short
 # undef short
@@ -628,40 +631,40 @@ static const yytype_int16 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    59,    59,    87,    88,    89,    90,    91,    92,    93,
-      94,    95,    96,   100,   104,   105,   109,   110,   114,   115,
-     116,   117,   121,   125,   126,   127,   128,   129,   130,   131,
-     135,   136,   137,   141,   142,   146,   147,   148,   149,   153,
-     168,   172,   173,   177,   180,   186,   188,   191,   194,   200,
-     201,   205,   206,   207,   208,   212,   213,   217,   218,   219,
-     223,   224,   225,   226,   230,   234,   235,   239,   240,   244,
-     247,   250,   251,   257,   258,   259,   260,   261,   262,   263,
-     264,   265,   266,   267,   268,   269,   270,   271,   275,   276,
-     277,   278,   279,   280,   281,   282,   286,   289,   292,   298,
-     300,   302,   304,   309,   310,   311,   315,   319,   321,   326,
-     327,   328,   329,   333,   337,   341,   342,   346,   347,   351,
-     355,   357,   362,   363,   367,   371,   375,   376,   380,   384,
-     385,   389,   390,   394,   398,   399,   403,   407,   409,   414,
-     415,   419,   423,   427,   431,   445,   446,   450,   451,   452,
-     456,   457,   458,   459,   463,   464,   465,   466,   467,   468,
-     469,   470,   471,   472,   473,   474,   475,   479,   486,   487,
-     488,   489,   493,   497,   498,   499,   500,   501,   502,   503,
-     507,   527,   528,   532,   536,   540,   541,   545,   546,   550,
-     554,   558,   559,   563,   564,   568,   569,   570,   571,   572,
-     573,   574,   575,   576,   577,   581,   582,   586,   590,   594,
-     598,   602,   606,   610,   614,   618,   619,   622,   625,   631,
-     632,   635,   641,   642,   645,   651,   652,   655,   658,   661,
-     667,   668,   671,   677,   678,   684,   685,   691,   692,   698,
-     699,   705,   706,   712,   713,   717,   721,   722,   772,   773,
-     774,   775,   776,   777,   778,   779,   780,   781,   782,   786,
-     787,   791,   792,   793,   794,   795,   796,   797,   798,   799,
-     800,   801,   805,   809,   813,   814,   815,   819,   820,   820,
-     825,   826,   830,   831,   835,   836,   840,   849,   859,   860,
-     861,   865,   874,   883,   887,   888,   889,   890,   891,   892,
-     893,   897,   898,   902,   911,   915,   919,   923,   927,   928,
-     932,   936,   940,   944,   945,   949,   950,   954,   954,   959,
-     960,   961,   962,   966,   967,   971,   973,   974,   979,   980,
-     984,   985,   989,   990,   991,   995,   996
+       0,    63,    63,    94,    95,    96,    97,    98,    99,   100,
+     101,   102,   103,   107,   111,   112,   116,   117,   121,   122,
+     123,   124,   128,   132,   133,   134,   135,   136,   137,   138,
+     142,   143,   144,   148,   149,   153,   154,   155,   156,   160,
+     176,   180,   181,   185,   188,   194,   196,   199,   202,   208,
+     209,   213,   214,   215,   216,   220,   221,   225,   226,   227,
+     231,   232,   233,   234,   238,   242,   243,   247,   248,   252,
+     255,   258,   259,   265,   266,   267,   268,   269,   270,   271,
+     272,   273,   274,   275,   276,   277,   278,   279,   283,   284,
+     285,   286,   287,   288,   289,   290,   294,   297,   300,   306,
+     308,   310,   312,   317,   318,   319,   323,   327,   329,   334,
+     335,   336,   337,   341,   345,   349,   350,   354,   355,   359,
+     363,   365,   370,   371,   375,   379,   383,   384,   388,   392,
+     393,   397,   398,   402,   406,   407,   411,   415,   417,   422,
+     423,   427,   431,   435,   439,   453,   454,   458,   459,   460,
+     464,   465,   466,   467,   471,   472,   473,   474,   475,   476,
+     477,   478,   479,   480,   481,   482,   483,   487,   494,   495,
+     496,   497,   501,   505,   506,   507,   508,   509,   510,   511,
+     515,   528,   529,   533,   537,   541,   542,   551,   552,   556,
+     560,   564,   565,   569,   570,   574,   575,   576,   577,   578,
+     579,   580,   581,   582,   583,   587,   588,   592,   596,   600,
+     604,   608,   612,   616,   620,   624,   625,   628,   631,   637,
+     638,   641,   647,   648,   651,   657,   658,   661,   664,   667,
+     673,   674,   677,   683,   684,   690,   691,   697,   698,   704,
+     705,   711,   712,   718,   719,   723,   727,   728,   778,   779,
+     780,   781,   782,   783,   784,   785,   786,   787,   788,   792,
+     793,   797,   798,   799,   800,   801,   802,   803,   804,   805,
+     806,   807,   811,   815,   819,   820,   821,   825,   826,   826,
+     831,   832,   836,   837,   841,   842,   846,   855,   865,   866,
+     867,   871,   880,   889,   893,   894,   895,   896,   897,   898,
+     899,   903,   904,   908,   917,   921,   925,   929,   933,   934,
+     938,   942,   946,   950,   951,   955,   956,   960,   960,   970,
+     971,   989,   990,   994,   995,   999,  1001,  1002,  1007,  1008,
+    1012,  1013,  1017,  1018,  1019,  1023,  1024
 };
 #endif
 
@@ -2311,201 +2314,170 @@ yyreduce:
         case 2:
 
 /* Line 1806 of yacc.c  */
-#line 60 "parser.y"
+#line 64 "parser.y"
     {
                 int i;
                 struct ast_node *head = (yyvsp[(2) - (3)].node);
                 while ((yyvsp[(2) - (3)].node) != NULL){
-                        
                     struct ast_node *var_type = (yyvsp[(1) - (3)].node);
-                    while (var_type->type == AST_STORAGE){
+                    while (var_type != NULL && var_type->type == AST_STORAGE){
                         var_type = var_type->left;
                     }
-                    ast_push_back(var_type, (yyvsp[(2) - (3)].node),LEFT);
+                    var_type = ast_push_back(var_type, (yyvsp[(2) - (3)].node),LEFT);
                     (yyval.node) = ast_reverse_tree(var_type, LEFT);
                     if ((yyvsp[(1) - (3)].node)->type == AST_STORAGE){
                         struct ast_node *tmp = (yyval.node)->left;
                         struct ast_node *this = (yyvsp[(1) - (3)].node);
-                        while (this->left->type == AST_STORAGE){
+                        while (this->left != NULL && this->left->type == AST_STORAGE){
                             this = this->left;
                         }
                         this->left = tmp;
                         (yyval.node)->left = (yyvsp[(1) - (3)].node);
                     }
+                    if (print_declarations){
+                        ast_print_tree((yyvsp[(2) - (3)].node));
+                    }
                     (yyvsp[(2) - (3)].node) = (yyvsp[(2) - (3)].node)->next;
                 }
                 (yyval.node) = head;
+                (yyval.node) = NULL;
             }
     break;
 
   case 4:
 
 /* Line 1806 of yacc.c  */
-#line 88 "parser.y"
+#line 95 "parser.y"
     { (yyval.node) = ast_push_back((yyvsp[(1) - (2)].node), (yyvsp[(2) - (2)].node), LEFT); }
     break;
 
   case 6:
 
 /* Line 1806 of yacc.c  */
-#line 90 "parser.y"
+#line 97 "parser.y"
     { (yyval.node) = ast_push_back((yyvsp[(2) - (2)].node), (yyvsp[(1) - (2)].node), LEFT); }
     break;
 
   case 8:
 
 /* Line 1806 of yacc.c  */
-#line 92 "parser.y"
+#line 99 "parser.y"
     { (yyval.node) = ast_push_back((yyvsp[(2) - (2)].node), (yyvsp[(1) - (2)].node), LEFT); }
     break;
 
   case 10:
 
 /* Line 1806 of yacc.c  */
-#line 94 "parser.y"
+#line 101 "parser.y"
     { (yyval.node) = (yyvsp[(2) - (2)].node); }
     break;
 
   case 12:
 
 /* Line 1806 of yacc.c  */
-#line 96 "parser.y"
+#line 103 "parser.y"
     { (yyval.node) = (yyvsp[(2) - (2)].node); }
     break;
 
   case 13:
 
 /* Line 1806 of yacc.c  */
-#line 100 "parser.y"
+#line 107 "parser.y"
     { (yyval.node) = NULL; }
     break;
 
   case 14:
 
 /* Line 1806 of yacc.c  */
-#line 104 "parser.y"
+#line 111 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 15:
 
 /* Line 1806 of yacc.c  */
-#line 105 "parser.y"
+#line 112 "parser.y"
     { (yyval.node) = ast_push_back((yyvsp[(1) - (3)].node),(yyvsp[(3) - (3)].node),NEXT); }
     break;
 
-  case 16:
+  case 17:
 
 /* Line 1806 of yacc.c  */
-#line 109 "parser.y"
-    {if(debug)printf("declarator\n");}
+#line 117 "parser.y"
+    { (yyval.node) = (yyvsp[(1) - (3)].node); }
     break;
 
   case 18:
 
 /* Line 1806 of yacc.c  */
-#line 114 "parser.y"
+#line 121 "parser.y"
     { (yyval.node) = ast_newnode(AST_STORAGE); (yyval.node)->attributes.storage_class = STORE_AUTO; }
     break;
 
   case 19:
 
 /* Line 1806 of yacc.c  */
-#line 115 "parser.y"
+#line 122 "parser.y"
     { (yyval.node) = ast_newnode(AST_STORAGE); (yyval.node)->attributes.storage_class = STORE_EXTERN; }
     break;
 
   case 20:
 
 /* Line 1806 of yacc.c  */
-#line 116 "parser.y"
+#line 123 "parser.y"
     { (yyval.node) = ast_newnode(AST_STORAGE); (yyval.node)->attributes.storage_class = STORE_REGISTER; }
     break;
 
   case 21:
 
 /* Line 1806 of yacc.c  */
-#line 117 "parser.y"
+#line 124 "parser.y"
     { (yyval.node) = ast_newnode(AST_STORAGE); (yyval.node)->attributes.storage_class = STORE_STATIC; }
     break;
 
   case 22:
 
 /* Line 1806 of yacc.c  */
-#line 121 "parser.y"
+#line 128 "parser.y"
     { (yyval.node) = ast_newnode(AST_TYPEDEF);}
     break;
 
   case 30:
 
 /* Line 1806 of yacc.c  */
-#line 135 "parser.y"
+#line 142 "parser.y"
     { (yyval.node) = NULL;}
     break;
 
   case 31:
 
 /* Line 1806 of yacc.c  */
-#line 136 "parser.y"
+#line 143 "parser.y"
     { (yyval.node) = NULL; }
     break;
 
   case 32:
 
 /* Line 1806 of yacc.c  */
-#line 137 "parser.y"
+#line 144 "parser.y"
     { (yyval.node) = NULL; }
-    break;
-
-  case 33:
-
-/* Line 1806 of yacc.c  */
-#line 141 "parser.y"
-    {if(debug)printf("pointer_declarator\n");}
-    break;
-
-  case 34:
-
-/* Line 1806 of yacc.c  */
-#line 142 "parser.y"
-    {if(debug)printf("direct_declarator\n");}
-    break;
-
-  case 35:
-
-/* Line 1806 of yacc.c  */
-#line 146 "parser.y"
-    {if(debug)printf("simple_declarator\n");}
     break;
 
   case 36:
 
 /* Line 1806 of yacc.c  */
-#line 147 "parser.y"
-    {if(debug)printf("parenthasized_declarator\n"); (yyval.node) = (yyvsp[(2) - (3)].node);}
-    break;
-
-  case 37:
-
-/* Line 1806 of yacc.c  */
-#line 148 "parser.y"
-    {if(debug)printf("function_declarator\n");}
-    break;
-
-  case 38:
-
-/* Line 1806 of yacc.c  */
-#line 149 "parser.y"
-    {if(debug)printf("array_declarator\n");}
+#line 154 "parser.y"
+    {(yyval.node) = (yyvsp[(2) - (3)].node);}
     break;
 
   case 39:
 
 /* Line 1806 of yacc.c  */
-#line 154 "parser.y"
+#line 161 "parser.y"
     {
                 int ret;
                 (yyval.node) = ast_newnode(AST_VAR);
+                (yyval.node)->scope = current_scope->scope;
                 strcpy((yyval.node)->attributes.identifier, yylval.yystring);
                 (yyval.node)->attributes.ln_effective = line_number;
                 strcpy((yyval.node)->attributes.file_name, filename);
@@ -2519,14 +2491,14 @@ yyreduce:
   case 40:
 
 /* Line 1806 of yacc.c  */
-#line 168 "parser.y"
+#line 176 "parser.y"
     {   (yyval.node) = ast_push_back((yyvsp[(1) - (2)].node),(yyvsp[(2) - (2)].node),LEFT); }
     break;
 
   case 43:
 
 /* Line 1806 of yacc.c  */
-#line 177 "parser.y"
+#line 185 "parser.y"
     {   (yyval.node) = ast_newnode(AST_ARRAY);
                                                 (yyval.node)->left = (yyvsp[(1) - (3)].node);
                                                 (yyval.node)->attributes.size = -1;  }
@@ -2535,7 +2507,7 @@ yyreduce:
   case 44:
 
 /* Line 1806 of yacc.c  */
-#line 180 "parser.y"
+#line 188 "parser.y"
     {   if ((yyvsp[(3) - (4)].node)->type != AST_NUM){
                                                                     ast_print_syntax_error(filename, line_number);
                                                                 } else {
@@ -2547,7 +2519,7 @@ yyreduce:
   case 69:
 
 /* Line 1806 of yacc.c  */
-#line 244 "parser.y"
+#line 252 "parser.y"
     { (yyval.node) = ast_newnode(AST_SCALAR); 
                                     (yyval.node)->attributes.num_signed = SIZE_SIGNED;
                                     (yyval.node)->attributes.scalar_type = SCALAR_INT; }
@@ -2556,7 +2528,7 @@ yyreduce:
   case 70:
 
 /* Line 1806 of yacc.c  */
-#line 247 "parser.y"
+#line 255 "parser.y"
     { (yyval.node) = ast_newnode(AST_SCALAR); 
                                         (yyval.node)->attributes.num_signed = SIZE_UNSIGNED;
                                         (yyval.node)->attributes.scalar_type = SCALAR_INT; }
@@ -2565,7 +2537,7 @@ yyreduce:
   case 72:
 
 /* Line 1806 of yacc.c  */
-#line 251 "parser.y"
+#line 259 "parser.y"
     { (yyval.node) = ast_newnode(AST_SCALAR); 
                                         (yyval.node)->attributes.num_signed = SIZE_SIGNED;
                                         (yyval.node)->attributes.scalar_type = SCALAR_INT; }
@@ -2574,7 +2546,7 @@ yyreduce:
   case 96:
 
 /* Line 1806 of yacc.c  */
-#line 286 "parser.y"
+#line 294 "parser.y"
     { (yyval.node) = ast_newnode(AST_SCALAR); 
                                         (yyval.node)->attributes.num_signed = SIZE_SIGNED;
                                         (yyval.node)->attributes.scalar_type = SCALAR_CHAR; }
@@ -2583,7 +2555,7 @@ yyreduce:
   case 97:
 
 /* Line 1806 of yacc.c  */
-#line 289 "parser.y"
+#line 297 "parser.y"
     { (yyval.node) = ast_newnode(AST_SCALAR); 
                                         (yyval.node)->attributes.num_signed = SIZE_SIGNED;
                                         (yyval.node)->attributes.scalar_type = SCALAR_CHAR; }
@@ -2592,7 +2564,7 @@ yyreduce:
   case 98:
 
 /* Line 1806 of yacc.c  */
-#line 292 "parser.y"
+#line 300 "parser.y"
     { (yyval.node) = ast_newnode(AST_SCALAR); 
                                         (yyval.node)->attributes.num_signed = SIZE_UNSIGNED;
                                         (yyval.node)->attributes.scalar_type = SCALAR_CHAR; }
@@ -2601,7 +2573,7 @@ yyreduce:
   case 99:
 
 /* Line 1806 of yacc.c  */
-#line 298 "parser.y"
+#line 306 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support floating point types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2609,7 +2581,7 @@ yyreduce:
   case 100:
 
 /* Line 1806 of yacc.c  */
-#line 300 "parser.y"
+#line 308 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support floating point types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2617,7 +2589,7 @@ yyreduce:
   case 101:
 
 /* Line 1806 of yacc.c  */
-#line 302 "parser.y"
+#line 310 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support floating point types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2625,7 +2597,7 @@ yyreduce:
   case 102:
 
 /* Line 1806 of yacc.c  */
-#line 304 "parser.y"
+#line 312 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support floating point types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2633,14 +2605,14 @@ yyreduce:
   case 106:
 
 /* Line 1806 of yacc.c  */
-#line 315 "parser.y"
+#line 323 "parser.y"
     { (yyval.node)=NULL; }
     break;
 
   case 107:
 
 /* Line 1806 of yacc.c  */
-#line 319 "parser.y"
+#line 327 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support enum types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2648,7 +2620,7 @@ yyreduce:
   case 108:
 
 /* Line 1806 of yacc.c  */
-#line 321 "parser.y"
+#line 329 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support enum types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2656,7 +2628,7 @@ yyreduce:
   case 120:
 
 /* Line 1806 of yacc.c  */
-#line 355 "parser.y"
+#line 363 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support struct types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2664,7 +2636,7 @@ yyreduce:
   case 121:
 
 /* Line 1806 of yacc.c  */
-#line 357 "parser.y"
+#line 365 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support struct types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2672,7 +2644,7 @@ yyreduce:
   case 137:
 
 /* Line 1806 of yacc.c  */
-#line 407 "parser.y"
+#line 415 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support union types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2680,7 +2652,7 @@ yyreduce:
   case 138:
 
 /* Line 1806 of yacc.c  */
-#line 409 "parser.y"
+#line 417 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support union types - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = NULL; }
     break;
@@ -2688,14 +2660,14 @@ yyreduce:
   case 143:
 
 /* Line 1806 of yacc.c  */
-#line 427 "parser.y"
+#line 435 "parser.y"
     { (yyval.node)=NULL; }
     break;
 
   case 144:
 
 /* Line 1806 of yacc.c  */
-#line 432 "parser.y"
+#line 440 "parser.y"
     {
                 struct ast_node *t;
                 t = get_ident(current_scope, yylval.yystring, NAMESPACE_OTHER);
@@ -2711,35 +2683,35 @@ yyreduce:
   case 150:
 
 /* Line 1806 of yacc.c  */
-#line 456 "parser.y"
+#line 464 "parser.y"
     { (yyval.node) = ast_newnode(AST_PTR); }
     break;
 
   case 151:
 
 /* Line 1806 of yacc.c  */
-#line 457 "parser.y"
+#line 465 "parser.y"
     { (yyval.node) = ast_newnode(AST_PTR); }
     break;
 
   case 152:
 
 /* Line 1806 of yacc.c  */
-#line 458 "parser.y"
+#line 466 "parser.y"
     { (yyval.node) = ast_newnode(AST_PTR); (yyval.node)->left = (yyvsp[(3) - (3)].node); }
     break;
 
   case 153:
 
 /* Line 1806 of yacc.c  */
-#line 459 "parser.y"
+#line 467 "parser.y"
     { (yyval.node) = ast_newnode(AST_PTR); (yyval.node)->left = (yyvsp[(2) - (2)].node); }
     break;
 
   case 167:
 
 /* Line 1806 of yacc.c  */
-#line 480 "parser.y"
+#line 488 "parser.y"
     {
                 char *ident = yylval.yystring;
                 ident[yylval.yystring_size] = '\0';
@@ -2751,49 +2723,42 @@ yyreduce:
   case 168:
 
 /* Line 1806 of yacc.c  */
-#line 486 "parser.y"
+#line 494 "parser.y"
     { (yyval.node) = ast_newnode(AST_NUM); (yyval.node)->attributes.num = yylval.yyint; (yyval.node)->attributes.ln_effective = line_number;}
     break;
 
   case 169:
 
 /* Line 1806 of yacc.c  */
-#line 487 "parser.y"
+#line 495 "parser.y"
     { (yyval.node) = ast_newnode(AST_CHAR); (yyval.node)->attributes.num = (int)(yylval.yychar); (yyval.node)->attributes.ln_effective = line_number;}
     break;
 
   case 170:
 
 /* Line 1806 of yacc.c  */
-#line 488 "parser.y"
+#line 496 "parser.y"
     { (yyval.node) = ast_newnode(AST_STR); strcpy((yyval.node)->attributes.str, yylval.yystring); (yyval.node)->attributes.ln_effective = line_number;}
     break;
 
   case 172:
 
 /* Line 1806 of yacc.c  */
-#line 493 "parser.y"
+#line 501 "parser.y"
     { (yyval.node) = (yyvsp[(2) - (3)].node); }
     break;
 
   case 180:
 
 /* Line 1806 of yacc.c  */
-#line 508 "parser.y"
+#line 516 "parser.y"
     {
                 (yyval.node) = ast_newnode(AST_UNOP);
                 (yyval.node)->attributes.op = '*';
                 struct ast_node *new = ast_newnode(AST_BINOP);
-                struct ast_node *mult = ast_newnode(AST_BINOP);
-                struct ast_node *size = ast_newnode(AST_UNOP);
                 new->attributes.op = '+';
                 new->left = (yyvsp[(1) - (4)].node);
-                mult->attributes.op = '*';
-                mult->left = (yyvsp[(3) - (4)].node);
-                size->attributes.op = SIZEOF;
-                size->left = (yyvsp[(1) - (4)].node);
-                mult->right = size;
-                new->right = mult;
+                new->right = (yyvsp[(3) - (4)].node);
                 (yyval.node)->left = new;
             }
     break;
@@ -2801,140 +2766,151 @@ yyreduce:
   case 181:
 
 /* Line 1806 of yacc.c  */
-#line 527 "parser.y"
+#line 528 "parser.y"
     { (yyval.node) = NULL; }
     break;
 
   case 182:
 
 /* Line 1806 of yacc.c  */
-#line 528 "parser.y"
+#line 529 "parser.y"
     { (yyval.node) = NULL; }
     break;
 
   case 185:
 
 /* Line 1806 of yacc.c  */
-#line 540 "parser.y"
+#line 541 "parser.y"
     { (yyval.node) = ast_newnode(AST_FNCALL); (yyval.node)->left = (yyvsp[(1) - (3)].node); }
     break;
 
   case 186:
 
 /* Line 1806 of yacc.c  */
-#line 541 "parser.y"
-    { (yyval.node) = ast_newnode(AST_FNCALL); (yyval.node)->left = (yyvsp[(1) - (4)].node); }
+#line 543 "parser.y"
+    {
+                (yyval.node) = ast_newnode(AST_FNCALL);
+                (yyval.node)->left = (yyvsp[(1) - (4)].node);
+                (yyval.node)->right = (yyvsp[(3) - (4)].node);
+            }
+    break;
+
+  case 188:
+
+/* Line 1806 of yacc.c  */
+#line 552 "parser.y"
+    { (yyval.node) = ast_push_back((yyvsp[(1) - (3)].node), (yyvsp[(3) - (3)].node), NEXT); }
     break;
 
   case 189:
 
 /* Line 1806 of yacc.c  */
-#line 550 "parser.y"
+#line 556 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = POSTINC; (yyval.node)->left = (yyvsp[(1) - (2)].node); }
     break;
 
   case 190:
 
 /* Line 1806 of yacc.c  */
-#line 554 "parser.y"
+#line 560 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = POSTDEC; (yyval.node)->left = (yyvsp[(1) - (2)].node); }
     break;
 
   case 191:
 
 /* Line 1806 of yacc.c  */
-#line 558 "parser.y"
+#line 564 "parser.y"
     { (yyval.node) = NULL; }
     break;
 
   case 192:
 
 /* Line 1806 of yacc.c  */
-#line 559 "parser.y"
+#line 565 "parser.y"
     { (yyval.node) = NULL; }
     break;
 
   case 194:
 
 /* Line 1806 of yacc.c  */
-#line 564 "parser.y"
+#line 570 "parser.y"
     { ast_print_syntax_error(filename, line_number); (yyval.node)=NULL; }
     break;
 
   case 205:
 
 /* Line 1806 of yacc.c  */
-#line 581 "parser.y"
+#line 587 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = SIZEOF; (yyval.node)->left=(yyvsp[(3) - (4)].node); }
     break;
 
   case 206:
 
 /* Line 1806 of yacc.c  */
-#line 582 "parser.y"
+#line 588 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = SIZEOF; (yyval.node)->left=(yyvsp[(2) - (2)].node); }
     break;
 
   case 207:
 
 /* Line 1806 of yacc.c  */
-#line 586 "parser.y"
+#line 592 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = '-'; (yyval.node)->left=(yyvsp[(2) - (2)].node); }
     break;
 
   case 208:
 
 /* Line 1806 of yacc.c  */
-#line 590 "parser.y"
+#line 596 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = '+'; (yyval.node)->left=(yyvsp[(2) - (2)].node); }
     break;
 
   case 209:
 
 /* Line 1806 of yacc.c  */
-#line 594 "parser.y"
+#line 600 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = '!'; (yyval.node)->left=(yyvsp[(2) - (2)].node); }
     break;
 
   case 210:
 
 /* Line 1806 of yacc.c  */
-#line 598 "parser.y"
+#line 604 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = '~'; (yyval.node)->left=(yyvsp[(2) - (2)].node); }
     break;
 
   case 211:
 
 /* Line 1806 of yacc.c  */
-#line 602 "parser.y"
+#line 608 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = '&'; (yyval.node)->left=(yyvsp[(2) - (2)].node); }
     break;
 
   case 212:
 
 /* Line 1806 of yacc.c  */
-#line 606 "parser.y"
+#line 612 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = '*'; (yyval.node)->left=(yyvsp[(2) - (2)].node); }
     break;
 
   case 213:
 
 /* Line 1806 of yacc.c  */
-#line 610 "parser.y"
+#line 616 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = PREINC; (yyval.node)->left=(yyvsp[(2) - (2)].node); }
     break;
 
   case 214:
 
 /* Line 1806 of yacc.c  */
-#line 614 "parser.y"
+#line 620 "parser.y"
     { (yyval.node) = ast_newnode(AST_UNOP); (yyval.node)->attributes.op = PREINC; (yyval.node)->left=(yyvsp[(2) - (2)].node); }
     break;
 
   case 216:
 
 /* Line 1806 of yacc.c  */
-#line 619 "parser.y"
+#line 625 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '*'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -2943,7 +2919,7 @@ yyreduce:
   case 217:
 
 /* Line 1806 of yacc.c  */
-#line 622 "parser.y"
+#line 628 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '/'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -2952,7 +2928,7 @@ yyreduce:
   case 218:
 
 /* Line 1806 of yacc.c  */
-#line 625 "parser.y"
+#line 631 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '%'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -2961,7 +2937,7 @@ yyreduce:
   case 220:
 
 /* Line 1806 of yacc.c  */
-#line 632 "parser.y"
+#line 638 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '+'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -2970,7 +2946,7 @@ yyreduce:
   case 221:
 
 /* Line 1806 of yacc.c  */
-#line 635 "parser.y"
+#line 641 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '-'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -2979,7 +2955,7 @@ yyreduce:
   case 223:
 
 /* Line 1806 of yacc.c  */
-#line 642 "parser.y"
+#line 648 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = SHL; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -2988,7 +2964,7 @@ yyreduce:
   case 224:
 
 /* Line 1806 of yacc.c  */
-#line 645 "parser.y"
+#line 651 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = SHR; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -2997,7 +2973,7 @@ yyreduce:
   case 226:
 
 /* Line 1806 of yacc.c  */
-#line 652 "parser.y"
+#line 658 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '<'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3006,7 +2982,7 @@ yyreduce:
   case 227:
 
 /* Line 1806 of yacc.c  */
-#line 655 "parser.y"
+#line 661 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '>'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3015,7 +2991,7 @@ yyreduce:
   case 228:
 
 /* Line 1806 of yacc.c  */
-#line 658 "parser.y"
+#line 664 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = LTEQ; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3024,7 +3000,7 @@ yyreduce:
   case 229:
 
 /* Line 1806 of yacc.c  */
-#line 661 "parser.y"
+#line 667 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = GTEQ; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3033,7 +3009,7 @@ yyreduce:
   case 231:
 
 /* Line 1806 of yacc.c  */
-#line 668 "parser.y"
+#line 674 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = EQEQ; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3042,7 +3018,7 @@ yyreduce:
   case 232:
 
 /* Line 1806 of yacc.c  */
-#line 671 "parser.y"
+#line 677 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = NOTEQ; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3051,7 +3027,7 @@ yyreduce:
   case 234:
 
 /* Line 1806 of yacc.c  */
-#line 678 "parser.y"
+#line 684 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '&'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3060,7 +3036,7 @@ yyreduce:
   case 236:
 
 /* Line 1806 of yacc.c  */
-#line 685 "parser.y"
+#line 691 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '^'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3069,7 +3045,7 @@ yyreduce:
   case 238:
 
 /* Line 1806 of yacc.c  */
-#line 692 "parser.y"
+#line 698 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = '|'; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3078,7 +3054,7 @@ yyreduce:
   case 240:
 
 /* Line 1806 of yacc.c  */
-#line 699 "parser.y"
+#line 705 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = LOGAND; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3087,7 +3063,7 @@ yyreduce:
   case 242:
 
 /* Line 1806 of yacc.c  */
-#line 706 "parser.y"
+#line 712 "parser.y"
     { (yyval.node) = ast_newnode(AST_BINOP); 
                                                             (yyval.node)->attributes.op = LOGOR; 
                                                             (yyval.node)->left=(yyvsp[(1) - (3)].node); (yyval.node)->right=(yyvsp[(3) - (3)].node); }
@@ -3096,14 +3072,14 @@ yyreduce:
   case 244:
 
 /* Line 1806 of yacc.c  */
-#line 713 "parser.y"
+#line 719 "parser.y"
     { ast_print_syntax_error(filename, line_number); }
     break;
 
   case 247:
 
 /* Line 1806 of yacc.c  */
-#line 723 "parser.y"
+#line 729 "parser.y"
     {
                 (yyval.node) = ast_newnode(AST_ASSGN);
                 (yyval.node)->left = (yyvsp[(1) - (3)].node);
@@ -3155,210 +3131,161 @@ yyreduce:
   case 248:
 
 /* Line 1806 of yacc.c  */
-#line 772 "parser.y"
+#line 778 "parser.y"
     { (yyval.yyint) = '='; }
     break;
 
   case 249:
 
 /* Line 1806 of yacc.c  */
-#line 773 "parser.y"
+#line 779 "parser.y"
     { (yyval.yyint) = TIMESEQ; }
     break;
 
   case 250:
 
 /* Line 1806 of yacc.c  */
-#line 774 "parser.y"
+#line 780 "parser.y"
     { (yyval.yyint) = DIVEQ; }
     break;
 
   case 251:
 
 /* Line 1806 of yacc.c  */
-#line 775 "parser.y"
+#line 781 "parser.y"
     { (yyval.yyint) = MODEQ; }
     break;
 
   case 252:
 
 /* Line 1806 of yacc.c  */
-#line 776 "parser.y"
+#line 782 "parser.y"
     { (yyval.yyint) = PLUSEQ; }
     break;
 
   case 253:
 
 /* Line 1806 of yacc.c  */
-#line 777 "parser.y"
+#line 783 "parser.y"
     { (yyval.yyint) = MINUSEQ; }
     break;
 
   case 254:
 
 /* Line 1806 of yacc.c  */
-#line 778 "parser.y"
+#line 784 "parser.y"
     { (yyval.yyint) = SHLEQ; }
     break;
 
   case 255:
 
 /* Line 1806 of yacc.c  */
-#line 779 "parser.y"
+#line 785 "parser.y"
     { (yyval.yyint) = SHREQ; }
     break;
 
   case 256:
 
 /* Line 1806 of yacc.c  */
-#line 780 "parser.y"
+#line 786 "parser.y"
     { (yyval.yyint) = ANDEQ; }
     break;
 
   case 257:
 
 /* Line 1806 of yacc.c  */
-#line 781 "parser.y"
+#line 787 "parser.y"
     { (yyval.yyint) = OREQ; }
     break;
 
   case 258:
 
 /* Line 1806 of yacc.c  */
-#line 782 "parser.y"
+#line 788 "parser.y"
     { (yyval.yyint) = XOREQ; }
-    break;
-
-  case 261:
-
-/* Line 1806 of yacc.c  */
-#line 791 "parser.y"
-    {{ if (debug){fprintf(stderr, "expression statement\n");} }}
     break;
 
   case 262:
 
 /* Line 1806 of yacc.c  */
-#line 792 "parser.y"
-    { if (debug){fprintf(stderr, "labeled statement\n");} }
-    break;
-
-  case 263:
-
-/* Line 1806 of yacc.c  */
-#line 793 "parser.y"
-    {  if (debug){fprintf(stderr, "compound statement\n");}}
-    break;
-
-  case 264:
-
-/* Line 1806 of yacc.c  */
-#line 794 "parser.y"
-    {{ if (debug){fprintf(stderr, "conditional statement\n");} }}
-    break;
-
-  case 265:
-
-/* Line 1806 of yacc.c  */
-#line 795 "parser.y"
-    {{ if (debug){fprintf(stderr, "iterative statement\n");} }}
-    break;
-
-  case 266:
-
-/* Line 1806 of yacc.c  */
-#line 796 "parser.y"
-    {{ if (debug){fprintf(stderr, "switch statement\n");} }}
+#line 798 "parser.y"
+    { (yyval.node) = NULL; }
     break;
 
   case 267:
 
 /* Line 1806 of yacc.c  */
-#line 797 "parser.y"
-    {{ if (debug){fprintf(stderr, "break statement\n");} }}
+#line 803 "parser.y"
+    { (yyval.node) = NULL; }
     break;
 
   case 268:
 
 /* Line 1806 of yacc.c  */
-#line 798 "parser.y"
-    {{ if (debug){fprintf(stderr, "continue statement\n");} }}
+#line 804 "parser.y"
+    { (yyval.node) = NULL; }
     break;
 
   case 269:
 
 /* Line 1806 of yacc.c  */
-#line 799 "parser.y"
-    {{ if (debug){fprintf(stderr, "return statement\n");} }}
+#line 805 "parser.y"
+    { (yyval.node) = NULL; }
     break;
 
   case 270:
 
 /* Line 1806 of yacc.c  */
-#line 800 "parser.y"
-    {{ if (debug){fprintf(stderr, "goto statement\n");} }}
-    break;
-
-  case 271:
-
-/* Line 1806 of yacc.c  */
-#line 801 "parser.y"
-    {{ if (debug){fprintf(stderr, "null statement\n");} }}
+#line 806 "parser.y"
+    { (yyval.node) = NULL; }
     break;
 
   case 272:
 
 /* Line 1806 of yacc.c  */
-#line 805 "parser.y"
-    { (yyval.node) = (yyvsp[(1) - (2)].node); if (debug){fprintf(stderr, "expression\n");} }
+#line 811 "parser.y"
+    { (yyval.node) = (yyvsp[(1) - (2)].node); }
+    break;
+
+  case 277:
+
+/* Line 1806 of yacc.c  */
+#line 825 "parser.y"
+    { (yyval.node) = NULL; }
     break;
 
   case 278:
 
 /* Line 1806 of yacc.c  */
-#line 820 "parser.y"
+#line 826 "parser.y"
     { current_scope = sym_table_new(filename, BLOCK_SCOPE, line_number, current_scope); }
     break;
 
   case 279:
 
 /* Line 1806 of yacc.c  */
-#line 821 "parser.y"
+#line 827 "parser.y"
     { current_scope = sym_table_pop(current_scope); }
     break;
 
   case 280:
 
 /* Line 1806 of yacc.c  */
-#line 825 "parser.y"
+#line 831 "parser.y"
     { (yyval.node) = (yyvsp[(1) - (1)].node); }
     break;
 
   case 281:
 
 /* Line 1806 of yacc.c  */
-#line 826 "parser.y"
+#line 832 "parser.y"
     { (yyval.node) = ast_push_back((yyvsp[(1) - (2)].node), (yyvsp[(2) - (2)].node), NEXT); }
-    break;
-
-  case 282:
-
-/* Line 1806 of yacc.c  */
-#line 830 "parser.y"
-    { if (print_ast && 0){ ast_print_tree(NULL);} }
-    break;
-
-  case 283:
-
-/* Line 1806 of yacc.c  */
-#line 831 "parser.y"
-    { if (print_ast && 0){ ast_print_node((yyvsp[(1) - (1)].node), 1);} }
     break;
 
   case 286:
 
 /* Line 1806 of yacc.c  */
-#line 841 "parser.y"
+#line 847 "parser.y"
     {
                 (yyval.node) = ast_newnode(AST_IF);
                 (yyval.node)->cond = (yyvsp[(3) - (5)].node);
@@ -3369,7 +3296,7 @@ yyreduce:
   case 287:
 
 /* Line 1806 of yacc.c  */
-#line 850 "parser.y"
+#line 856 "parser.y"
     {
                 (yyval.node) = ast_newnode(AST_IF);
                 (yyval.node)->cond = (yyvsp[(3) - (7)].node);
@@ -3381,7 +3308,7 @@ yyreduce:
   case 291:
 
 /* Line 1806 of yacc.c  */
-#line 866 "parser.y"
+#line 872 "parser.y"
     {
                 (yyval.node) = ast_newnode(AST_DO);
                 (yyval.node)->cond = (yyvsp[(5) - (7)].node);
@@ -3392,7 +3319,7 @@ yyreduce:
   case 292:
 
 /* Line 1806 of yacc.c  */
-#line 875 "parser.y"
+#line 881 "parser.y"
     {
                 (yyval.node) = ast_newnode(AST_WHILE);
                 (yyval.node)->cond = (yyvsp[(3) - (5)].node);
@@ -3403,63 +3330,63 @@ yyreduce:
   case 293:
 
 /* Line 1806 of yacc.c  */
-#line 883 "parser.y"
+#line 889 "parser.y"
     { (yyval.node) = (yyvsp[(2) - (3)].node); (yyval.node)->body = (yyvsp[(3) - (3)].node); }
     break;
 
   case 294:
 
 /* Line 1806 of yacc.c  */
-#line 887 "parser.y"
+#line 893 "parser.y"
     { (yyval.node) = ast_newnode(AST_FOR); }
     break;
 
   case 295:
 
 /* Line 1806 of yacc.c  */
-#line 888 "parser.y"
+#line 894 "parser.y"
     { (yyval.node) = ast_newnode(AST_FOR); (yyval.node)->left = (yyvsp[(2) - (5)].node); }
     break;
 
   case 296:
 
 /* Line 1806 of yacc.c  */
-#line 889 "parser.y"
+#line 895 "parser.y"
     { (yyval.node) = ast_newnode(AST_FOR); (yyval.node)->cond = (yyvsp[(3) - (5)].node); }
     break;
 
   case 297:
 
 /* Line 1806 of yacc.c  */
-#line 890 "parser.y"
+#line 896 "parser.y"
     { (yyval.node) = ast_newnode(AST_FOR); (yyval.node)->right = (yyvsp[(4) - (5)].node); }
     break;
 
   case 298:
 
 /* Line 1806 of yacc.c  */
-#line 891 "parser.y"
+#line 897 "parser.y"
     { (yyval.node) = ast_newnode(AST_FOR); (yyval.node)->left = (yyvsp[(2) - (6)].node); (yyval.node)->cond = (yyvsp[(4) - (6)].node); }
     break;
 
   case 299:
 
 /* Line 1806 of yacc.c  */
-#line 892 "parser.y"
+#line 898 "parser.y"
     { (yyval.node) = ast_newnode(AST_FOR); (yyval.node)->cond = (yyvsp[(3) - (6)].node); (yyval.node)->right = (yyvsp[(5) - (6)].node); }
     break;
 
   case 300:
 
 /* Line 1806 of yacc.c  */
-#line 893 "parser.y"
+#line 899 "parser.y"
     { (yyval.node) = ast_newnode(AST_FOR); (yyval.node)->left = (yyvsp[(2) - (7)].node); (yyval.node)->cond = (yyvsp[(4) - (7)].node); (yyval.node)->right = (yyvsp[(6) - (7)].node); }
     break;
 
   case 303:
 
 /* Line 1806 of yacc.c  */
-#line 903 "parser.y"
+#line 909 "parser.y"
     {
                 (yyval.node) = ast_newnode(AST_SWITCH);
                 (yyval.node)->cond = (yyvsp[(3) - (5)].node);
@@ -3470,49 +3397,62 @@ yyreduce:
   case 312:
 
 /* Line 1806 of yacc.c  */
-#line 940 "parser.y"
+#line 946 "parser.y"
     { (yyval.node) = NULL; }
-    break;
-
-  case 313:
-
-/* Line 1806 of yacc.c  */
-#line 944 "parser.y"
-    {{ if (debug){fprintf(stderr, "top_level_declaration\n");} }}
-    break;
-
-  case 315:
-
-/* Line 1806 of yacc.c  */
-#line 949 "parser.y"
-    {{ if(debug){puts("declaration");}}}
-    break;
-
-  case 316:
-
-/* Line 1806 of yacc.c  */
-#line 950 "parser.y"
-    {{ if(debug){puts("function_definition");}}}
     break;
 
   case 317:
 
 /* Line 1806 of yacc.c  */
-#line 954 "parser.y"
+#line 960 "parser.y"
     { current_scope = sym_table_new(filename, FUNCTION_SCOPE, line_number, current_scope); }
     break;
 
   case 318:
 
 /* Line 1806 of yacc.c  */
-#line 955 "parser.y"
-    { current_scope = sym_table_pop(current_scope); if (print_ast){ast_dump((yyvsp[(4) - (5)].node));} }
+#line 962 "parser.y"
+    { 
+                    current_scope = sym_table_pop(current_scope);
+                    if (print_ast) ast_dump((yyvsp[(4) - (5)].node), (yyvsp[(1) - (5)].node)->attributes.identifier);
+                    quads_generate_function((yyvsp[(1) - (5)].node), (yyvsp[(4) - (5)].node));
+                }
+    break;
+
+  case 319:
+
+/* Line 1806 of yacc.c  */
+#line 970 "parser.y"
+    { (yyval.node) = ast_reverse_tree((yyvsp[(1) - (1)].node), LEFT); }
+    break;
+
+  case 320:
+
+/* Line 1806 of yacc.c  */
+#line 972 "parser.y"
+    { 
+                struct ast_node *var_type = (yyvsp[(1) - (2)].node);
+                while (var_type->type == AST_STORAGE){
+                    var_type = var_type->left;
+                }
+                ast_push_back(var_type, (yyvsp[(2) - (2)].node),LEFT);
+                (yyval.node) = ast_reverse_tree(var_type, LEFT);
+                if ((yyvsp[(1) - (2)].node)->type == AST_STORAGE){
+                    struct ast_node *tmp = (yyval.node)->left;
+                    struct ast_node *this = (yyvsp[(1) - (2)].node);
+                    while (this->left->type == AST_STORAGE){
+                        this = this->left;
+                    }
+                    this->left = tmp;
+                    (yyval.node)->left = (yyvsp[(1) - (2)].node);
+                }
+            }
     break;
 
   case 325:
 
 /* Line 1806 of yacc.c  */
-#line 971 "parser.y"
+#line 999 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support function prototypes - %s: %d\n",
                                                                  filename, line_number);(yyval.node) = ast_newnode(AST_FN); ast_push_back((yyval.node),(yyvsp[(1) - (4)].node),LEFT); }
     break;
@@ -3520,14 +3460,14 @@ yyreduce:
   case 326:
 
 /* Line 1806 of yacc.c  */
-#line 973 "parser.y"
+#line 1001 "parser.y"
     { (yyval.node) = ast_newnode(AST_FN); ast_push_back((yyval.node),(yyvsp[(1) - (3)].node),LEFT); }
     break;
 
   case 327:
 
 /* Line 1806 of yacc.c  */
-#line 974 "parser.y"
+#line 1002 "parser.y"
     { fprintf(stderr, "Warning: This compiler doesn't support function arguments - %s: %d\n",
                                                                 filename, line_number);(yyval.node) = ast_newnode(AST_FN); ast_push_back((yyval.node),(yyvsp[(1) - (4)].node),LEFT); }
     break;
@@ -3535,7 +3475,7 @@ yyreduce:
 
 
 /* Line 1806 of yacc.c  */
-#line 3539 "parser.tab.c"
+#line 3479 "parser.tab.c"
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -3766,20 +3706,26 @@ yyreturn:
 
 
 /* Line 2067 of yacc.c  */
-#line 999 "parser.y"
+#line 1027 "parser.y"
 
 
 int main(int argc, char** argv){
     char *infile;
     int c;
     
-    while ((c=getopt(argc, argv, "da")) != -1){
+    while ((c=getopt(argc, argv, "dazq")) != -1){
         switch(c){
-            case 'd':
+            case 'z':
                 debug = 1;
                 break;
             case 'a':
                 print_ast = 1;
+                break;
+            case 'd':
+                print_declarations = 1;
+                break;
+            case 'q':
+                print_quads = 1;
                 break;
             default:
                 fprintf(stderr, "invalid argument: %c\n", c);
