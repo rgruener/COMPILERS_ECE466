@@ -102,6 +102,7 @@ void ast_dump(struct ast_node *root, char *fn_name){
 void ast_print_node(struct ast_node *root, int tabs){
     int i, size;
     char tab_string[100];
+    struct ast_node *tmp;
     for (i=0; i<tabs; i++){
         /*printf("\t");*/
         tab_string[i] = '\t';
@@ -120,9 +121,11 @@ void ast_print_node(struct ast_node *root, int tabs){
             size = ast_list_size(root->right, NEXT);
             printf("%sFNCALL, %d arguments\n", tab_string, size);
             ast_print_node(root->left, tabs+1);
+            tmp = root->right;
             for (i=0; i<size; i++){
                 printf("%sarg #%d=\n", tab_string, i+1);
-                ast_print_node(root->right, tabs+1);
+                ast_print_node(tmp, tabs+1);
+                tmp = tmp->next;
             }
             break;
         case AST_NUM:
@@ -132,7 +135,36 @@ void ast_print_node(struct ast_node *root, int tabs){
             printf("%sCONSTANT: (type=char):%c\n", tab_string, (char)root->attributes.num);
             break;
         case AST_STR:
-            printf("%sCONSTANT: (type=char *):%s\n", tab_string, root->attributes.str);
+            printf("%sCONSTANT: (type=char *):\"", tab_string, root->attributes.str);
+            for (i=0; i<strlen(root->attributes.str); i++){
+                switch (root->attributes.str[i]){
+                    case '\"':
+                        printf("\\\"");
+                        break;
+                    case '\'':
+                        printf("\\\'");
+                        break;
+                    case '\\':
+                        printf("\\\\");
+                        break;
+                    case '\a':
+                        printf("\\a");
+                        break;
+                    case '\b':
+                        printf("\\b");
+                        break;
+                    case '\n':
+                        printf("\\n");
+                        break;
+                    case '\t':
+                        printf("\\t");
+                        break;
+                    default:
+                        printf("%c", root->attributes.str[i]);
+                        break;
+                }
+            }
+            printf("\"\n");
             break;
         case AST_SCALAR:
             printf("%sSCALAR: (type=", tab_string, root->attributes.num_signed);
@@ -274,16 +306,15 @@ void ast_print_tree(struct ast_node *root){
         for (i=0; i<num; i++){
             printf("\t");
         }
-        /*printf("Node ");*/
         switch (root->type){
             case AST_VAR:
-                printf("Variable %s, FILE: %s - %d, SCOPE: %d, SCOPE START: %s - %d ", root->attributes.identifier, 
+                printf("Variable %s, FILE: %s - %d, SCOPE: %d, SCOPE START: %s - %d ", root->attributes.identifier,
                             current_scope->file_name, root->attributes.ln_effective, root->scope,
                             current_scope->file_name, current_scope->line_begin);
-                if (root->left->type == AST_STORAGE){
+                if (root->left && root->left->type == AST_STORAGE){
                     printf("Storage class: ");
                 }
-                while (root->left->type == AST_STORAGE){
+                while (root->left && root->left->type == AST_STORAGE){
                     root = root->left;
                     switch (root->attributes.storage_class){
                         case STORE_AUTO:

@@ -81,7 +81,7 @@ declaration
                         $$->left = $1;
                     }
                     if (print_declarations){
-                        ast_print_tree($2);
+                        ast_print_tree($$);
                     }
                     $2 = $2->next;
                 }
@@ -173,7 +173,7 @@ simple_declarator
         ;
 
 pointer_declarator
-        : pointer direct_declarator {   $$ = ast_push_back($1,$2,LEFT); } 
+        : pointer direct_declarator {   $$ = ast_push_back($1,$2,LEFT);} 
         ;
 
 type_qualifier_list
@@ -824,7 +824,7 @@ label
 compound_statement
         : '{' '}' { $$ = NULL; }
         | '{' { current_scope = sym_table_new(filename, BLOCK_SCOPE, line_number, current_scope); } 
-            declaration_or_statement_list '}' { current_scope = sym_table_pop(current_scope); }
+            declaration_or_statement_list '}' { $$ = $3; current_scope = sym_table_pop(current_scope); }
         ;
 
 declaration_or_statement_list

@@ -2335,7 +2335,7 @@ yyreduce:
                         (yyval.node)->left = (yyvsp[(1) - (3)].node);
                     }
                     if (print_declarations){
-                        ast_print_tree((yyvsp[(2) - (3)].node));
+                        ast_print_tree((yyval.node));
                     }
                     (yyvsp[(2) - (3)].node) = (yyvsp[(2) - (3)].node)->next;
                 }
@@ -2492,7 +2492,7 @@ yyreduce:
 
 /* Line 1806 of yacc.c  */
 #line 176 "parser.y"
-    {   (yyval.node) = ast_push_back((yyvsp[(1) - (2)].node),(yyvsp[(2) - (2)].node),LEFT); }
+    {   (yyval.node) = ast_push_back((yyvsp[(1) - (2)].node),(yyvsp[(2) - (2)].node),LEFT);}
     break;
 
   case 43:
@@ -3265,7 +3265,7 @@ yyreduce:
 
 /* Line 1806 of yacc.c  */
 #line 827 "parser.y"
-    { current_scope = sym_table_pop(current_scope); }
+    { (yyval.node) = (yyvsp[(3) - (4)].node); current_scope = sym_table_pop(current_scope); }
     break;
 
   case 280:

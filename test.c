@@ -1,6 +1,10 @@
-int a,b;
+int a[10];
 
-int f(){
-    char c;
-    a=2*4;
+int main(){
+    int i,j,v;
+    /*v=a[i];*/
+    j = 5*3-9%7;
+    if (j=3){
+        j = 3;
+    }
 }
